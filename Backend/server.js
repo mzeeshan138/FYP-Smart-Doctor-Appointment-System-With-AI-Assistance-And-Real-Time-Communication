@@ -1,0 +1,37 @@
+import "dotenv/config";
+import express, { application } from "express";
+import cors from "cors";
+import connectDB from "./config/mongodb.js";
+import connectCloudinary from "./config/cloudnary.js";
+import adminRouter from "./routes/adminRoute.js";
+
+import doctorRouter from "./routes/doctorRoute.js";
+import userRouter from "./routes/usersRoute.js";
+import fileUpload from "express-fileupload";
+
+//app config
+
+const app = express();
+const port = process.env.PORT || 4000;
+
+
+connectDB();
+connectCloudinary();
+
+//middlewares
+app.use(express.json());
+app.use(cors({
+  origin: ["http://localhost:3000", "http://localhost:5174"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+}));
+// app.use(express.urlencoded({ extended: true })); // Handles form data
+// app.use(fileUpload()); // Enables file uploads
+
+//api end points
+app.use("/api/admin", adminRouter);
+app.use("/api/doctor", doctorRouter);
+app.use("/api/user", userRouter);
+
+
+app.listen(port, () => console.log(`\nserver is running on ${port}`));
