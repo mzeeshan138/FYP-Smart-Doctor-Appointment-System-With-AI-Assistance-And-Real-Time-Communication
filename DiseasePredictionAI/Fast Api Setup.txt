@@ -1,0 +1,25 @@
+## Initial Setup
+python -m venv myenv
+myenv\Scripts\activate   
+pip install fastapi==0.123.10 uvicorn==0.40.0 numpy==2.0.2 pandas==2.2.2 scikit-learn==1.6.1
+pip freeze > requirements.txt
+uvicorn app:app --reload
+
+
+#Stop Services/Environment
+deactivate 
+
+#Trained Model Specification 
+-python version is 3.12.12
+-pip version is 24.1.2
+
+
+#Deployment
+pip install gunicorn    #for deploying latter
+
+#upgrade env pip
+python -m pip install --upgrade pip
+
+#Slow internet speed
+pip install scikit-learn==1.6.1 --timeout 300 --retries 10
+

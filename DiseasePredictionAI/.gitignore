@@ -1,0 +1,13 @@
+# Python virtual environment
+myenv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# FastAPI / Python extras
+*.log
+*.sqlite3

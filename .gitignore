@@ -1,3 +1,16 @@
+# Ignore Python venv inside DiseasePredictionAI
+DiseasePredictionAI/myenv/
+
+# Ignore Python cache inside DiseasePredictionAI
+DiseasePredictionAI/__pycache__/
+DiseasePredictionAI/**/__pycache__/
+DiseasePredictionAI/*.pyc
+
+# General Python ignores (safe)
+__pycache__/
+*.pyc
+*.pyo
+
 # Logs
 logs
 *.log
