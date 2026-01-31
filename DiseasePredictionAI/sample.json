@@ -1,0 +1,14 @@
+[
+  {
+  "text": " I am feeling continuous headache with fever. My body feels weak and I have chills. I also feel nausea and sweating a lot  "
+},
+{
+    "detected_symptoms": [
+        "chills",
+        "nausea",
+        "headache",
+        "sweating"
+    ],
+    "predicted_disease": "Malaria"
+}
+]

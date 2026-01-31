@@ -6,14 +6,17 @@ export default function AIChatWidget() {
 
   return (
     <>
-      {/* Floating Button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg text-2xl z-50"
-      >
-        🤖
-      </button>
+      {/* Floating Button (Hide when chat open) */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-6 bg-blue-600 text-white w-16 h-16 rounded-full shadow-lg text-3xl z-50 hover:scale-110 transition-transform"
+        >
+          🤖
+        </button>
+      )}
 
+      {/* Chat Window */}
       {open && <AIChatWindow onClose={() => setOpen(false)} />}
     </>
   );
