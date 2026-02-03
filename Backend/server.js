@@ -1,4 +1,4 @@
-import "dotenv/config";
+import dotenv from 'dotenv';
 import express, { application } from "express";
 import cors from "cors";
 import connectDB from "./config/mongodb.js";
@@ -9,10 +9,15 @@ import doctorRouter from "./routes/doctorRoute.js";
 import userRouter from "./routes/usersRoute.js";
 import fileUpload from "express-fileupload";
 
-//app config
+//Setting Environment
+if (process.env.NODE_ENV !== 'PRODUCTION') {
+  dotenv.config({ path: 'config/config.env' });
+}
 
+//app config
 const app = express();
 const port = process.env.PORT || 4000;
+
 
 
 connectDB();

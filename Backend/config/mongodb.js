@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const connectDB = async () => {
   try {
     const connectionInstance = await mongoose.connect(
-      `mongodb://localhost:27017/prescripto`
+      process.env.DB_LOCAL_URI
     );
 
     console.log(
