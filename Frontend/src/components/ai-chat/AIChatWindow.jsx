@@ -15,11 +15,11 @@ export default function AIChatWindow({ onClose }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // ✅ Boolean Symptom Validation
-  const hasValidSymptom = (text) => {
+  // ✅ Count matched symptoms from user text
+  const getMatchedSymptoms = (text) => {
     const lowerText = text.toLowerCase();
 
-    return SYMPTOMS.some((s) => {
+    return SYMPTOMS.filter((s) => {
       const phrase = s.replace(/_/g, " ");
       const regex = new RegExp(`\\b${phrase}\\b`, "i");
       return regex.test(lowerText);
@@ -33,19 +33,32 @@ export default function AIChatWindow({ onClose }) {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    // ✅ Check symptom before API call
-    const isValid = hasValidSymptom(input);
+  // ✅ Check symptom before API call
+  const matchedSymptoms = getMatchedSymptoms(input);
 
-    if (!isValid) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: "⚠ Please enter valid symptoms like high fever, headache, cough etc.",
-        },
-      ]);
-      return;
-    }
+  // ❌ No valid symptom
+  if (matchedSymptoms.length === 0) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "bot",
+        text: "⚠ Please enter valid symptoms like high fever, headache, cough etc.",
+      },
+    ]);
+    return;
+  }
+
+  // ❌ Less than 3 symptoms
+  if (matchedSymptoms.length < 3) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "bot",
+        text: "⚠ Please enter at least 3 different symptoms for accurate prediction.",
+      },
+    ]);
+    return;
+  }
 
     setLoading(true);
 
