@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import DoctorCard from "./DoctorCard";
 import PropTypes from "prop-types";
+import { SYMPTOMS } from "../../constants/constants";
 
 export default function AIChatWindow({ onClose }) {
   const [messages, setMessages] = useState([]);
@@ -14,20 +15,50 @@ export default function AIChatWindow({ onClose }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  // ✅ Boolean Symptom Validation
+  const hasValidSymptom = (text) => {
+    const lowerText = text.toLowerCase();
+
+    return SYMPTOMS.some((s) => {
+      const phrase = s.replace(/_/g, " ");
+      const regex = new RegExp(`\\b${phrase}\\b`, "i");
+      return regex.test(lowerText);
+    });
+  };
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const userMsg = { sender: "user", text: input };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
+
+    // ✅ Check symptom before API call
+    const isValid = hasValidSymptom(input);
+
+    if (!isValid) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: "⚠ Please enter valid symptoms like high fever, headache, cough etc.",
+        },
+      ]);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:4000/api/ai/chat", { message: input });
+      const res = await axios.post(
+        "http://localhost:4000/api/ai/chat",
+        { message: input }
+      );
+
       const { detected_symptoms, predicted_disease, doctors } = res.data;
 
       // Disease message
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         {
           sender: "bot",
@@ -39,14 +70,20 @@ export default function AIChatWindow({ onClose }) {
 
       // Doctors message
       if (doctors && doctors.length > 0) {
-        setMessages(prev => [
+        setMessages((prev) => [
           ...prev,
           { sender: "bot", type: "doctors", doctors },
         ]);
+      } else {
+        // ✅ No doctors found
+        setMessages((prev) => [
+          ...prev,
+          { sender: "bot", type: "no-doctor" },
+        ]);
       }
     } catch (err) {
-      console.error(err); 
-      setMessages(prev => [
+      console.error(err);
+      setMessages((prev) => [
         ...prev,
         { sender: "bot", text: "Sorry, something went wrong 😕" },
       ]);
@@ -63,8 +100,12 @@ export default function AIChatWindow({ onClose }) {
       <div className="bg-blue-600 text-white p-3 rounded-t-xl flex justify-between items-center">
         <span className="font-semibold">AI Health Assistant</span>
         <div className="space-x-2">
-          <button onClick={clearChat} className="hover:bg-blue-500 px-2 rounded">🧹</button>
-          <button onClick={onClose} className="hover:bg-blue-500 px-2 rounded">✖</button>
+          <button onClick={clearChat} className="hover:bg-blue-500 px-2 rounded">
+            🧹
+          </button>
+          <button onClick={onClose} className="hover:bg-blue-500 px-2 rounded">
+            ✖
+          </button>
         </div>
       </div>
 
@@ -83,7 +124,9 @@ export default function AIChatWindow({ onClose }) {
             return (
               <div key={i} className="text-left space-y-1">
                 <div className="inline-block bg-red-100 border-l-4 border-red-500 px-3 py-2 rounded-lg">
-                  <p className="font-semibold text-red-700">Predicted Disease: {msg.predicted_disease}</p>
+                  <p className="font-semibold text-red-700">
+                    Predicted Disease: {msg.predicted_disease}
+                  </p>
                   <p className="text-gray-700 text-sm">
                     Symptoms: {msg.detected_symptoms.join(", ")}
                   </p>
@@ -93,9 +136,22 @@ export default function AIChatWindow({ onClose }) {
           } else if (msg.type === "doctors") {
             return (
               <div key={i} className="space-y-2">
-                {msg.doctors.map(doc => (
+                {msg.doctors.map((doc) => (
                   <DoctorCard key={doc._id} doctor={doc} />
                 ))}
+              </div>
+            );
+          } else if (msg.type === "no-doctor") {
+            return (
+              <div key={i} className="text-left">
+                <div className="inline-block bg-yellow-100 border-l-4 border-yellow-500 px-3 py-2 rounded-lg">
+                  <p className="font-semibold text-yellow-700">
+                    🚫 No doctors found for this disease.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Please try another symptom or check later.
+                  </p>
+                </div>
               </div>
             );
           } else {
@@ -108,7 +164,11 @@ export default function AIChatWindow({ onClose }) {
             );
           }
         })}
-        {loading && <div className="text-gray-400 text-sm">AI is typing...</div>}
+
+        {loading && (
+          <div className="text-gray-400 text-sm">AI is typing...</div>
+        )}
+
         <div ref={chatEndRef} />
       </div>
 
@@ -116,7 +176,7 @@ export default function AIChatWindow({ onClose }) {
       <div className="p-2 border-t flex">
         <input
           value={input}
-          onChange={e => setInput(e.target.value)}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="Type your symptoms..."
           className="flex-1 border rounded-l-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
         />
@@ -132,5 +192,5 @@ export default function AIChatWindow({ onClose }) {
 }
 
 AIChatWindow.propTypes = {
-  onClose: PropTypes.func.isRequired, // onClose is required function
+  onClose: PropTypes.func.isRequired,
 };
