@@ -5,10 +5,9 @@ import re
 
 app = FastAPI(title="Disease Prediction API")
 
-# 🔹 Enable CORS so React can call FastAPI
+# Enable CORS so React can call FastAPI
 origins = [
     "http://localhost:3000",  # React dev server
-    # Add your frontend domain here if deployed
 ]
 
 app.add_middleware(

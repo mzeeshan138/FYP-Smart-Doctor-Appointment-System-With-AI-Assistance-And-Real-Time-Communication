@@ -73,7 +73,8 @@ const addDoctor = async (req, res) => {
     // upload image cloudinary
 
     const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-      resource_type: "image",
+      resource_type: "image",  
+      folder: "DoctorHub/doctors",
     });
 
     const imageUrl = imageUpload.secure_url;
