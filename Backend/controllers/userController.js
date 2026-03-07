@@ -7,6 +7,7 @@ import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import razorpay from "razorpay";
+ import Conversation from "../models/conversationModel.js";
 // API for register user
 
 const registerUser = async (req, res) => {
@@ -190,6 +191,21 @@ const bookAppointment = async (req, res) => {
     //save new slots data in docdata
 
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
+    // --- Create Conversation Logic Here ---
+        const existingConversation = await Conversation.findOne({
+          docId,
+          userId,
+          appointmentId: newAppointment._id,
+        });
+    
+        if (!existingConversation) {
+          await Conversation.create({
+          docId,
+          userId,
+          appointmentId: newAppointment._id,
+        });
+        }
 
     res.json({ success: true, message: "Appointment Booked" });
   } catch (error) {

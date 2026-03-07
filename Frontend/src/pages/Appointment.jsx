@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import RelatedDoctors from "../components/RelatedDoctors";
@@ -218,6 +218,15 @@ const Appointment = () => {
           >
             Book an appointment
           </button>
+          {token && (
+            <Link
+              to="/chat"
+              state={{ doctor: docInfo }}
+              className="inline-block ml-4 bg-green-500 text-white text-sm font-light px-10 py-3 rounded-full my-5"
+            >
+              Message Doctor
+            </Link>
+          )}
         </div>
 
         {/* ------------------listing related doctors */}

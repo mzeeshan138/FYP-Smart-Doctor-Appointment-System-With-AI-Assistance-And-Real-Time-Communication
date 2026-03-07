@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
@@ -38,6 +38,14 @@ const Navbar = () => {
         </NavLink>
       </ul>
       <div className="flex items-center gap-4">
+        {token && (
+          <Link
+            to="/chat"
+            className="hidden md:flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-primary hover:text-white transition"
+          >
+            💬
+          </Link>
+        )}
         {token && userData ? (
           <div className=" flex items-center gap-2 cursor-pointer group relative">
             <img className="w-8 h-8 rounded-full" src={userData.image} alt="" />

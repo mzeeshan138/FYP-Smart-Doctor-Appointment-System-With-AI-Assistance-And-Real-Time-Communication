@@ -16,6 +16,7 @@ import { AppContext } from "./context/AppContext";
 import axios from "axios";
 import TopLoadingBar from "./components/TopLoadingBar";
 import Payment from "./pages/Payment";
+import Chat from "./pages/Chat";
 
 const App = () => {
   const { isLoading, setIsLoading } = useContext(AppContext);
@@ -36,6 +37,7 @@ const App = () => {
           <Route path="/my-appointments" element={<MyAppointments />}></Route>
           <Route path="/payment/:id/:appointmentId" element={<Payment />}></Route>
           <Route path="/appointment/:docId" element={<Appointment />}></Route>
+          <Route path="/chat" element={<Chat />} />
           <Route path="*" element={<div>Not found</div>} />
         </Routes>
         <Footer />
