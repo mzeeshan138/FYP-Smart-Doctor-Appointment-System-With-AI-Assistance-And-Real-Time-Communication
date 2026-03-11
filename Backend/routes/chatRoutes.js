@@ -5,6 +5,7 @@ import  authAdmin  from "../middlewares/authAdmin.js";
 
 import {
   getConversations,
+  deleteConversation,
   getMessages,
   sendMessage,
   deleteMessage,
@@ -17,6 +18,9 @@ const router = express.Router();
 // Get all conversations
 router.get("/list", authUser, getConversations);
 
+// delete conversations
+router.delete("/conversation/:conversationId", authUser, deleteConversation);
+
 // Get messages of a conversation
 router.get("/messages/:conversationId", authUser, getMessages);
 
@@ -26,9 +30,8 @@ router.post("/send", authUser, sendMessage);
 // Delete own message
 router.delete("/message/:messageId", authUser, deleteMessage);
 
-// Clear full conversation
+// Clear chat
 router.delete("/clear/:conversationId", authUser, clearConversation);
-
 
 
 export default router;

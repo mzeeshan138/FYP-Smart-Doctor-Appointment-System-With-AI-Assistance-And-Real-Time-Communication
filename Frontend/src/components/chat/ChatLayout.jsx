@@ -93,6 +93,9 @@ const ChatLayout = ({ currentUser }) => {
         currentUser={currentUser}
         setCurrentChat={setCurrentChat}
         onlineUsers={onlineUsers}
+        setConversations={setConversations}
+        backendUrl={backendUrl}
+        token={token}
       />
 
       <ChatBox

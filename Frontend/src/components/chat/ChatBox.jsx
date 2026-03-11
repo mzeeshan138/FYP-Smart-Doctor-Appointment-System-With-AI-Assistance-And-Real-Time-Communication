@@ -178,6 +178,56 @@ const ChatBox = ({
 
   };
 
+  const handleDeleteForEveryone = async () => {
+
+    try {
+
+      for (let id of selectedMessages) {
+
+        await axios.delete(
+          backendUrl + "/api/chat/message/" + id,
+          {
+            headers: { token },
+            data: {
+              userId: currentUser._id,
+              userModel: "user"
+            }
+          }
+        );
+
+      }
+
+      const updatedMessages = messages.filter(
+        (m) => !selectedMessages.includes(m._id)
+      );
+
+      setMessages(updatedMessages);
+
+      /* -------- UPDATE CONVERSATION LAST MESSAGE -------- */
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === currentChat._id
+            ? {
+                ...c,
+                lastMessage:
+                  updatedMessages.length > 0
+                    ? updatedMessages[updatedMessages.length - 1]
+                    : null,
+              }
+            : c
+        )
+      );
+
+      setSelectedMessages([]);
+      setSelectMode(false);
+
+    } catch (err) {
+      console.log(err);
+    }
+
+  };
+
   return (
     <div className="flex-1 flex flex-col">
 
@@ -269,15 +319,30 @@ const ChatBox = ({
 
           <div className="flex gap-4">
 
+            {/* DELETE FOR ME */}
+
             <button
               onClick={handleDeleteSelected}
               disabled={selectedMessages.length === 0}
               className={`flex items-center gap-1 
-              ${selectedMessages.length === 0 
-                ? "text-gray-400 cursor-not-allowed"
-                : "text-red-500"}`}
+                ${selectedMessages.length === 0
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-red-500"}`}
             >
               <MdDeleteOutline /> Delete for me
+            </button>
+
+            {/* DELETE FOR EVERYONE */}
+
+            <button
+              onClick={handleDeleteForEveryone}
+              disabled={selectedMessages.length === 0}
+              className={`flex items-center gap-1
+                ${selectedMessages.length === 0
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-red-600"}`}
+            >
+              <MdDeleteOutline /> Delete for everyone
             </button>
 
             <button
