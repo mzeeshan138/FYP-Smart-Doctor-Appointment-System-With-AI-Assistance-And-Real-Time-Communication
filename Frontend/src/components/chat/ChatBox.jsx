@@ -117,6 +117,15 @@ const ChatBox = ({
       );
 
       setMessages([]);
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === currentChat._id
+            ? { ...c, lastMessage: null }
+            : c
+        )
+      );
+
       setShowMenu(false);
 
     } catch (err) {
@@ -146,8 +155,18 @@ const ChatBox = ({
 
       }
 
-      setMessages((prev) =>
-        prev.filter((m) => !selectedMessages.includes(m._id))
+     const updatedMessages = messages.filter(
+        (m) => !selectedMessages.includes(m._id)
+      );
+
+      setMessages(updatedMessages);
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === currentChat._id
+            ? { ...c, lastMessage: updatedMessages[updatedMessages.length - 1] || null }
+            : c
+        )
       );
 
       setSelectedMessages([]);
@@ -252,9 +271,13 @@ const ChatBox = ({
 
             <button
               onClick={handleDeleteSelected}
-              className="text-red-500 flex items-center gap-1"
+              disabled={selectedMessages.length === 0}
+              className={`flex items-center gap-1 
+              ${selectedMessages.length === 0 
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-red-500"}`}
             >
-              <MdDeleteOutline /> Delete
+              <MdDeleteOutline /> Delete for me
             </button>
 
             <button
