@@ -9,6 +9,7 @@ uvicorn app:app --reload
 uvicorn app:app --reload
 
 #Stop Services/Environment
+CTrl + C
 deactivate 
 
 #Trained Model Specification 

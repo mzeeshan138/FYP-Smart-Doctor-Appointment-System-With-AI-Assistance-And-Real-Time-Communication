@@ -145,17 +145,29 @@ export const sendMessage = async (req, res) => {
       return res.status(404).json({ message: "Conversation not found" });
     }
 
+    /* ================= CREATE MESSAGE ================= */
     const message = await Message.create({
       conversationId,
       sender: userId,
       senderModel: userModel,
       text,
     });
+      
+    /* ================= REMOVE DELETE FLAG ================= */
+    const otherUserId =
+      userId.toString() === conversation.userId.toString()
+        ? conversation.docId
+        : conversation.userId;
 
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: message._id,
+      // remove both users from deletedFor (optional but better)
+      $pull: {
+        deletedFor: { $in: [userId, otherUserId] }
+      }
     });
 
+    /* ================= RESPONSE ================= */
     const populatedMessage = await Message.findById(message._id).populate(
       "sender",
       "name image"
