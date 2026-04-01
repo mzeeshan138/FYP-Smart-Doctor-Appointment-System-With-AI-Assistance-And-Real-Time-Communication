@@ -1,8 +1,6 @@
 import { useState, useContext, useRef, useEffect } from "react";
 import axios from "axios";
 import MessageBubble from "./MessageBubble";
-import { AppContext } from "../../context/AppContext";
-
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { MdDeleteOutline } from "react-icons/md";
 import { AiOutlineClear } from "react-icons/ai";
@@ -15,10 +13,10 @@ const ChatBox = ({
   setMessages,
   socket,
   onlineUsers,
-  setConversations
+  setConversations,
+  dToken,
+  backendUrl
 }) => {
-
-  const { backendUrl, token } = useContext(AppContext);
 
   const [newMessage, setNewMessage] = useState("");
   const [showMenu, setShowMenu] = useState(false);
@@ -75,9 +73,9 @@ const ChatBox = ({
           conversationId: currentChat._id,
           text: newMessage,
           userId: currentUser._id,
-          userModel: "user"
+          userModel: "doctor"
         },
-        { headers: { token } }
+        { headers: { token: dToken } }
       );
 
       setMessages((prev) => [...prev, data]);
@@ -108,15 +106,24 @@ const ChatBox = ({
       await axios.delete(
         backendUrl + "/api/chat/clear/" + currentChat._id,
         {
-          headers: { token },
+          headers: { token: dToken },
           data: {
             userId: currentUser._id,
-            userModel: "user"
+            userModel: "doctor"
           }
         }
       );
 
       setMessages([]);
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === currentChat._id
+            ? { ...c, lastMessage: null }
+            : c
+        )
+      );
+
       setShowMenu(false);
 
     } catch (err) {
@@ -136,18 +143,78 @@ const ChatBox = ({
         await axios.delete(
           backendUrl + "/api/chat/message/" + id,
           {
-            headers: { token },
+            headers:{ token: dToken },
             data: {
               userId: currentUser._id,
-              userModel: "user"
+              userModel: "doctor"
             }
           }
         );
 
       }
 
-      setMessages((prev) =>
-        prev.filter((m) => !selectedMessages.includes(m._id))
+     const updatedMessages = messages.filter(
+        (m) => !selectedMessages.includes(m._id)
+      );
+
+      setMessages(updatedMessages);
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === currentChat._id
+            ? { ...c, lastMessage: updatedMessages[updatedMessages.length - 1] || null }
+            : c
+        )
+      );
+
+      setSelectedMessages([]);
+      setSelectMode(false);
+
+    } catch (err) {
+      console.log(err);
+    }
+
+  };
+
+  const handleDeleteForEveryone = async () => {
+
+    try {
+
+      for (let id of selectedMessages) {
+
+        await axios.delete(
+          backendUrl + "/api/chat/message/" + id,
+          {
+            headers: { token: dToken },
+            data: {
+              userId: currentUser._id,
+              userModel: "doctor"
+            }
+          }
+        );
+
+      }
+
+      const updatedMessages = messages.filter(
+        (m) => !selectedMessages.includes(m._id)
+      );
+
+      setMessages(updatedMessages);
+
+      /* -------- UPDATE CONVERSATION LAST MESSAGE -------- */
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === currentChat._id
+            ? {
+                ...c,
+                lastMessage:
+                  updatedMessages.length > 0
+                    ? updatedMessages[updatedMessages.length - 1]
+                    : null,
+              }
+            : c
+        )
       );
 
       setSelectedMessages([]);
@@ -250,11 +317,30 @@ const ChatBox = ({
 
           <div className="flex gap-4">
 
+            {/* DELETE FOR ME */}
+
             <button
               onClick={handleDeleteSelected}
-              className="text-red-500 flex items-center gap-1"
+              disabled={selectedMessages.length === 0}
+              className={`flex items-center gap-1 
+                ${selectedMessages.length === 0
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-red-500"}`}
             >
-              <MdDeleteOutline /> Delete
+              <MdDeleteOutline /> Delete for me
+            </button>
+
+            {/* DELETE FOR EVERYONE */}
+
+            <button
+              onClick={handleDeleteForEveryone}
+              disabled={selectedMessages.length === 0}
+              className={`flex items-center gap-1
+                ${selectedMessages.length === 0
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-red-600"}`}
+            >
+              <MdDeleteOutline /> Delete for everyone
             </button>
 
             <button

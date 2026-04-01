@@ -1,23 +1,31 @@
-import { useContext } from "react";
-import { AppContext } from "../context/AppContext";
+import { useContext, useEffect } from "react";
 import { DoctorContext } from "../context/DontorContext";
 import ChatLayout from "../components/chat/ChatLayout";
 
+
 const Chat = () => {
-  // const { userData, dToken } = useContext(AppContext);
-  const { userData, dToken } = useContext(DoctorContext);
+  const { profileData, dToken, getProfileData } = useContext(DoctorContext);
+
+  useEffect(() => {
+    if (dToken && !profileData) {
+      getProfileData();
+    }
+  }, [dToken,profileData,getProfileData]);
+
+  console.log("doc", profileData);
 
   if (!dToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Please login first.
-      </div>
-    );
+    return <div>Please login first.</div>;
   }
+
+  // // ⛔ WAIT until profile loads
+  // if (!profileData) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ChatLayout currentUser={userData} />
+      <ChatLayout currentUser={profileData} />
     </div>
   );
 };

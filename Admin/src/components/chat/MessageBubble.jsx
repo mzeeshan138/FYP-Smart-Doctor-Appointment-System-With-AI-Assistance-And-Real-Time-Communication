@@ -24,7 +24,7 @@ const MessageBubble = ({
       )}
 
       <div
-        onClick={onSelect}
+        onClick={() => selectMode && onSelect()}
         className={`px-4 py-2 rounded-xl shadow max-w-xs cursor-pointer
         ${own ? "bg-green-500 text-white" : "bg-white"}
         ${selected ? "border-2 border-blue-500" : ""}`}

@@ -1,14 +1,14 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
-import { AppContext } from "../../context/AppContext";
+import { DoctorContext } from "../../context/DontorContext";
 import SidebarIcons from "./SidebarIcons";
 import ConversationList from "./ConversationList";
 import ChatBox from "./ChatBox";
 
 const ChatLayout = ({ currentUser }) => {
   
-  const { backendUrl, token } = useContext(AppContext);
+  const { backendUrl, dToken } = useContext(DoctorContext);
 
   const [conversations, setConversations] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
@@ -51,7 +51,7 @@ const ChatLayout = ({ currentUser }) => {
       try {
         const { data } = await axios.get(
           backendUrl + "/api/chat/list",
-          { headers: { token } }
+          { headers: { token: dToken } }
         );
         setConversations(data);
       } catch (err) {
@@ -60,7 +60,7 @@ const ChatLayout = ({ currentUser }) => {
     };
 
     fetchConversations();
-  }, [currentUser,backendUrl,token]);
+  }, [currentUser,backendUrl]);
 
   /* ================= FETCH MESSAGES ================= */
   useEffect(() => {
@@ -70,9 +70,9 @@ const ChatLayout = ({ currentUser }) => {
       try {
         const { data } = await axios.get(
           backendUrl + "/api/chat/messages/" + currentChat._id,
-          { headers: { token } ,
+          { headers: { token: dToken } ,
     params: {
-      userModel: "user",
+      userModel: "doctor",
     },},
         );
         setMessages(data);
@@ -93,6 +93,9 @@ const ChatLayout = ({ currentUser }) => {
         currentUser={currentUser}
         setCurrentChat={setCurrentChat}
         onlineUsers={onlineUsers}
+        setConversations={setConversations}
+        backendUrl={backendUrl}
+        dToken={ dToken }
       />
 
       <ChatBox
@@ -103,6 +106,8 @@ const ChatLayout = ({ currentUser }) => {
         socket={socket}
         onlineUsers={onlineUsers}
         setConversations={setConversations}
+        dToken={dToken}
+        backendUrl={backendUrl}
       />
     </div>
   );
