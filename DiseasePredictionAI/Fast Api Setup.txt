@@ -5,6 +5,10 @@ pip install fastapi==0.123.10 uvicorn==0.40.0 numpy==2.0.2 pandas==2.2.2 scikit-
 pip freeze > requirements.txt
 uvicorn app:app --reload
 
+
+#first time script run in terminal (only this env)
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+
 #Run Server
 uvicorn app:app --reload
 

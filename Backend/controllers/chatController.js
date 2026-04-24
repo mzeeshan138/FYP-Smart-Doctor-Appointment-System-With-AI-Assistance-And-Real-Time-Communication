@@ -55,14 +55,14 @@ export const deleteConversation = async (req, res) => {
     /* ===== soft delete conversation ===== */
 
     await Conversation.findByIdAndUpdate(conversationId, {
-      $push: { deletedFor: userId },
+      $addToSet: { deletedFor: userId },
       deletedForModel: userModel
     });
 
     await Message.updateMany(
       { conversationId },
       {
-        $push: { deletedFor: userId },
+        $addToSet: { deletedFor: userId },
         deletedForModel: userModel
       }
     );
@@ -117,7 +117,7 @@ export const getMessages = async (req, res) => {
         seenBy: { $ne: userId },
       },
       {
-        $push: { seenBy: userId },
+        $addToSet: { seenBy: userId },
         seenByModel: userModel,
       }
     );
@@ -238,7 +238,7 @@ export const deleteMessage = async (req, res) => {
     /* ================= DELETE FOR ME ================= */
 
     await Message.findByIdAndUpdate(messageId, {
-      $push: { deletedFor: userId },
+      $addToSet: { deletedFor: userId },
       deletedForModel: userModel,
     });
 
@@ -264,7 +264,7 @@ export const clearConversation = async (req, res) => {
     await Message.updateMany(
       { conversationId },
       {
-        $push: { deletedFor: userId },
+        $addToSet: { deletedFor: userId },
         deletedForModel: userModel,
       }
     );
