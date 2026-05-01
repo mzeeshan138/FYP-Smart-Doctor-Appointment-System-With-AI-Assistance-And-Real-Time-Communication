@@ -1,3 +1,4 @@
+import { BsCheck, BsCheckAll } from "react-icons/bs";
 const MessageBubble = ({
   message,
   own,
@@ -5,6 +6,10 @@ const MessageBubble = ({
   selected,
   onSelect
 }) => {
+  const isSeen =
+  own &&
+  message.seenByModel &&
+  message.senderModel !== message.seenByModel;
 
   return (
     <div
@@ -32,12 +37,22 @@ const MessageBubble = ({
 
         <p>{message.text}</p>
 
-        <p className="text-[10px] mt-1 opacity-70 text-right">
-          {new Date(message.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-          })}
-        </p>
+        <p className="text-[11px] mt-1 flex items-center justify-end gap-1">
+          <span className="opacity-70">
+            {new Date(message.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })}
+          </span>
+
+          {own && (
+            isSeen ? (
+              <BsCheckAll className="text-blue-600 text-lg" />
+            ) : (
+              <BsCheck className="text-white text-lg opacity-90" />
+            )
+          )}
+      </p>
 
       </div>
     </div>
