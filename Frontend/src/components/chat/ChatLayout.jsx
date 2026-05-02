@@ -85,7 +85,8 @@ const ChatLayout = ({ currentUser }) => {
   }, [currentChat]);
 
   return (
-    <div className="flex h-screen">
+    // <div className="flex h-screen">
+      <div className="flex h-[calc(100vh-150px)]">
       <SidebarIcons />
 
       <ConversationList

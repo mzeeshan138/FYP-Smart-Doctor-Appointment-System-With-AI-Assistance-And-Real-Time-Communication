@@ -12,10 +12,10 @@ const Navbar = () => {
     localStorage.removeItem("token");
   };
   return (
-    <div className="flex sticky top-0 bg-white/90 z-10 items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400">
+    <div className="flex sticky top-0 bg-white/90 z-10 items-center justify-between text-sm py-2 mb-2 border-b border-b-gray-300">
       <img
         onClick={() => navigate("/")}
-        className="w-44 cursor-pointer"
+        className="w-32 cursor-pointer"
         src={assets.logo}
         alt=""
       />

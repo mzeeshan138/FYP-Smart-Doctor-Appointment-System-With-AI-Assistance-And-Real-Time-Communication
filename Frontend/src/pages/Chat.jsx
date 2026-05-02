@@ -14,7 +14,7 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
       <ChatLayout currentUser={userData} />
     </div>
   );

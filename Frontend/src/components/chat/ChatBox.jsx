@@ -31,8 +31,13 @@ const ChatBox = ({
   /* ================= AUTO SCROLL ================= */
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ 
+      behavior: "smooth",
+      block: "nearest"  // This prevents the whole page from scrolling
+    });
+  }
+}, [messages]);
 
   if (!currentChat) {
     return (
@@ -229,7 +234,7 @@ const ChatBox = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col h-full">
 
       {/* ================= HEADER ================= */}
 
@@ -287,8 +292,8 @@ const ChatBox = ({
 
       {/* ================= MESSAGES ================= */}
 
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
-
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-100 scrollbar-thin" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex flex-col">
         {messages.map((msg) => (
           <MessageBubble
             key={msg._id}
@@ -302,7 +307,7 @@ const ChatBox = ({
             onSelect={() => toggleSelect(msg._id)}
           />
         ))}
-
+        </div>
         <div ref={messagesEndRef}></div>
 
       </div>
@@ -311,7 +316,7 @@ const ChatBox = ({
 
       {selectMode ? (
 
-        <div className="flex items-center justify-between p-3 border-t bg-gray-200">
+        <div className="flex items-center justify-between p-3 border-t bg-gray-200 flex-shrink-0">
 
           <p className="font-semibold">
             {selectedMessages.length} selected
@@ -360,7 +365,7 @@ const ChatBox = ({
 
       ) : (
 
-        <div className="flex p-3 border-t bg-white">
+        <div className="flex p-3 border-t bg-white flex-shrink-0">
 
           <input
             type="text"
