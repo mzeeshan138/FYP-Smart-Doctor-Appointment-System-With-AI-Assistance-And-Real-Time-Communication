@@ -12,7 +12,7 @@ const Chat = () => {
     }
   }, [dToken,profileData,getProfileData]);
 
-  console.log("doc", profileData);
+  // console.log("doc", profileData);
 
   if (!dToken) {
     return <div>Please login first.</div>;
@@ -24,7 +24,7 @@ const Chat = () => {
   // }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
       <ChatLayout currentUser={profileData} />
     </div>
   );

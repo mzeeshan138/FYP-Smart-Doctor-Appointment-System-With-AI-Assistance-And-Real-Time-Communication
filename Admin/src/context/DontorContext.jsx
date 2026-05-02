@@ -35,7 +35,7 @@ const DoctorContextProvider = (props) => {
   const completePayment = async(id)=>{
     try {
       const data = await axios.post(backendUrl + "/api/doctor/complete-payment", {id}, {headers: {dToken}})
-      console.log(data)
+      // console.log(data)
     } catch (error) {
       console.log(error)
     }
