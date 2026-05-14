@@ -142,8 +142,8 @@ const updateProfile = async (req, res) => {
   }
 };
 
-//API to book appointment
 
+//API to book appointment
 const bookAppointment = async (req, res) => {
   try {
     const { userId, docId, slotDate, slotTime } = req.body;
@@ -171,6 +171,35 @@ const bookAppointment = async (req, res) => {
     }
 
     const userData = await userModel.findById(userId).select("-password");
+
+    // ================= ACCOUNT RESTRICTION CHECK =================
+
+    const currentYear = new Date().getFullYear();
+
+    const yearData =
+      userData.yearlyCancelledAppointments.find(
+        (y) => y.year === currentYear
+      );
+
+    // auto green status for new year
+    if (!yearData || yearData.cancelAppointmentCount === 0) {
+      userData.accountStatus = "green";
+      await userData.save();
+    }
+
+    // stop booking if limit reached
+    else if (
+      yearData.cancelAppointmentCount >=
+      Number(process.env.CANCEL_APPOINTMENT_LIMIT)
+    ) {
+        return res.json({
+          success: false,
+          message:
+            "Your account is restricted due to repeated appointment cancellations",
+        });
+      }
+
+    // ================= OLD FUNCTIONALITY =================
 
     delete docData.slots_booked;
 
@@ -246,6 +275,53 @@ const cancelAppointment = async (req, res) => {
       cancelled: true,
     });
 
+    // ================= CANCEL TRACKING =================
+    const userData = await userModel.findById(userId);
+    const currentYear = new Date().getFullYear();
+
+    let yearData = userData.yearlyCancelledAppointments.find(
+      (y) => y.year === currentYear
+    );
+
+    // create year object if not exists
+    if (!yearData) {
+      userData.yearlyCancelledAppointments.push({
+        year: currentYear,
+        cancelAppointmentCount: 0,
+        cancelledAppointments: [],
+      });
+
+      // re-fetch reference after push
+      yearData = userData.yearlyCancelledAppointments.find(
+        (y) => y.year === currentYear
+      );
+    }
+
+    // increase yearly count
+    yearData.cancelAppointmentCount += 1;
+
+    // store cancelled appointment
+    yearData.cancelledAppointments.push({
+      appointmentId,
+      cancelledAt: new Date(),
+    });
+
+    // increase total count
+    userData.totalCancelledAppointments += 1;
+
+    // account status logic
+    const limit = Number(process.env.CANCEL_APPOINTMENT_LIMIT) ;
+
+    if (yearData.cancelAppointmentCount === 0) {
+      userData.accountStatus = "green";
+    } else if (yearData.cancelAppointmentCount < limit) {
+      userData.accountStatus = "warning";
+    } else {
+      userData.accountStatus = "restricted";
+    }
+
+    await userData.save();
+
     // releaseing doctor slot
     const { docId, slotDate, slotTime } = appointmentData;
 
@@ -288,7 +364,7 @@ const paymentRazorpay = async (req, res) => {
 
     const options = {
       amount: appointmentData.amount * 100,
-      currency: "INR",
+      currency: "PKR",
       receipt: appointmentId,
     };
 

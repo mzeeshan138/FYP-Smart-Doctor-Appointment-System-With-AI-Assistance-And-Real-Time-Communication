@@ -13,6 +13,50 @@ const userSchema = mongoose.Schema({
   gender: { type: String, default: "Not selected" },
   dob: { type: String, default: "Not selected" },
   phone: { type: String, default: "000000000" },
+
+  // ================= CANCEL TRACKING =================
+  accountStatus: {
+  type: String,
+  enum: ["green", "warning", "restricted", "blocked"],
+  default: "green",
+},
+
+  totalCancelledAppointments: {
+    type: Number,
+    default: 0,
+  },
+
+  yearlyCancelledAppointments: {
+    type: [
+      {
+        year: {
+          type: Number,
+          required: true,
+        },
+
+        cancelAppointmentCount: {
+          type: Number,
+          default: 0,
+        },
+
+        cancelledAppointments: [
+          {
+            appointmentId: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "appointment",
+            },
+
+            cancelledAt: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+        ],
+      },
+    ],
+
+    default: [],
+  },
 });
 
 const userModel = mongoose.model.user || mongoose.model("user", userSchema);
