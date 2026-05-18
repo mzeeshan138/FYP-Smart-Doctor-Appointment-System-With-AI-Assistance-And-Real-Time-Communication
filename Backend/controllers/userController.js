@@ -148,9 +148,25 @@ const bookAppointment = async (req, res) => {
   try {
     const { userId, docId, slotDate, slotTime } = req.body;
     const docData = await doctorModel.findById(docId).select("-password");
+    
+    // ================= CHECK EXISTING ACTIVE APPOINTMENT =================
+
+    const existingAppointment = await appointmentModel.findOne({
+      userId,
+      cancelled: false,
+      isCompleted: false,
+    });
+
+    if (existingAppointment) {
+      return res.json({
+        success: false,
+        message:
+          "You already have an active appointment. Complete or cancel it before booking a new one.",
+      });
+    }
 
     if (!docData.available) {
-      return res.json({ success: false, message: "Doctor is not availble " });
+      return res.json({ success: false, message: "Doctor is not available " });
     }
 
     let slots_booked = docData.slots_booked;
@@ -322,7 +338,7 @@ const cancelAppointment = async (req, res) => {
 
     await userData.save();
 
-    // releaseing doctor slot
+    // releasing doctor slot
     const { docId, slotDate, slotTime } = appointmentData;
 
     const doctorData = await doctorModel.findById(docId);
@@ -389,7 +405,7 @@ const verifyRazorpay = async (req, res) => {
         payment: true,
       });
 
-      res.json({ success: true, message: "Payment successfull" });
+      res.json({ success: true, message: "Payment successful" });
     } else {
       res.json({ success: false, message: "Payment failed" });
     }
