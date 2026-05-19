@@ -1,11 +1,14 @@
 import { useContext, useEffect } from "react";
 import { AdminContext } from "../../context/AdminContext";
 import MoveUpOnRender from "../../components/MoveUpOnRender";
+import { useNavigate } from "react-router-dom";
+
 
 const DoctorsList = () => {
-  const { doctors, aToken, getAllDoctors, changeAvailability } =
+  const { doctors, aToken, getAllDoctors, changeAvailability ,deleteDoctor} =
     useContext(AdminContext);
 
+  const navigate = useNavigate();
   useEffect(() => {
     if (aToken) {
       getAllDoctors();
@@ -40,6 +43,21 @@ const DoctorsList = () => {
                     checked={item.available}
                   />
                   <p>Available</p>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => navigate(`/edit-doctor/${item._id}`)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => deleteDoctor(item._id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>

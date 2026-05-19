@@ -18,6 +18,7 @@ import DoctorAppointmets from "./pages/Doctor/DoctorAppointments";
 import DoctorProfile from "./pages/Doctor/DoctorProfile";
 import TopLoadingBar from "./components/TopLoadingBar";
 import Chat from './pages/Chat'
+import EditDoctor from "./pages/Admin/EditDoctor";
 const App = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken } = useContext(DoctorContext);
@@ -38,6 +39,7 @@ const App = () => {
             <Route path="/all-appointments" element={<AllAppointments />} />
             <Route path="/add-doctor" element={<AddDoctor />} />
             <Route path="/doctor-list" element={<DoctorsList />} />
+            <Route path="/edit-doctor/:id" element={<EditDoctor />} />
 
             {/* Doctor Routes */}
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />

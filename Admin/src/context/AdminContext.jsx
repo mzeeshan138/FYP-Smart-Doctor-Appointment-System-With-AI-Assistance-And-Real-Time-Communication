@@ -104,6 +104,44 @@ const AdminContextProvider = (props) => {
       toast.error(error);
     }
   };
+const updateDoctor = async (formData) => {
+  try {
+    const { data } = await axios.post(
+      backendUrl + "/api/admin/update-doctor",
+      formData,
+      { headers: { aToken } }
+    );
+
+    if (data.success) {
+      toast.success(data.message);
+      getAllDoctors();
+    } else {
+      toast.error(data.message);
+    }
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
+const deleteDoctor = async (doctorId) => {
+  try {
+    const { data } = await axios.post(
+      backendUrl + "/api/admin/delete-doctor",
+      { doctorId },
+      { headers: { aToken } }
+    );
+
+    if (data.success) {
+      toast.success(data.message);
+      getAllDoctors();
+    } else {
+      toast.error(data.message);
+    }
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
   const backendUrl = "http://localhost:4000";
   const value = {
     aToken,
@@ -118,7 +156,10 @@ const AdminContextProvider = (props) => {
     cancelAppointment,
     getDashData,
     dashData,
+    updateDoctor,
+    deleteDoctor,
   };
+
 
   return (
     <AdminContext.Provider value={value}>
