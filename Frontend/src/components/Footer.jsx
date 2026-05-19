@@ -34,10 +34,56 @@ const Footer = () => {
         </div>
       </div>
       <div>
-        {/* -----------copy right text--------- */}
+        
+
+      {/* -----------FYP Team Section--------- */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
+        <h2 className="text-xl font-semibold text-gray-800 text-center mb-4">
+          Final Year Project Team
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-4 text-center">
+          <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition">
+            <p className="font-semibold text-gray-800">
+              Muhammad Zeeshan
+            </p>
+            <p className="text-sm text-gray-600">2K22-BSSE-106</p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition">
+            <p className="font-semibold text-gray-800">
+              Muhammad Umar Farooq
+            </p>
+            <p className="text-sm text-gray-600">2K22-BSSE-115</p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition">
+            <p className="font-semibold text-gray-800">
+              Ammad Ashfaque Rao
+            </p>
+            <p className="text-sm text-gray-600">2K22-BSSE-122</p>
+          </div>
+        </div>
+
+        <div className="text-center mt-5">
+          <p className="text-gray-700 font-medium">
+            Supervised by Sir Irfan & Sir Zargham Abbas
+          </p>
+
+          <p className="text-gray-600 mt-2">
+            Department of Computer Science
+          </p>
+
+          <p className="text-gray-500 text-sm">
+            NFC IET Multan
+          </p>
+        </div>
+      </div>
+        <hr />
+{/* -----------copy right text--------- */}
         <hr />
         <p className="py-5 text-sm text-center">
-          Copyright © 2025 - All Right Reserved.
+          Copyright © 2026 - All Right Reserved.
         </p>
       </div>
     </div>
