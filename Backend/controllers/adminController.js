@@ -200,6 +200,95 @@ const adminDashboard = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+
+const updateDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.body;
+    const {
+      name,
+      email,
+      speciality,
+      degree,
+      experience,
+      about,
+      fees,
+      address,
+      phone,
+    } = req.body;
+
+    const imageFile = req.file;
+
+    const doctor = await doctorModel.findById(doctorId);
+    if (!doctor) {
+      return res.json({ success: false, message: "Doctor not found" });
+    }
+
+    // If new image uploaded → delete old + upload new
+    let imageUrl = doctor.image;
+
+    if (imageFile) {
+      // delete old image from cloudinary
+      if (doctor.image) {
+        const publicId = doctor.image.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`DoctorHub/doctors/${publicId}`);
+      }
+
+      const upload = await cloudinary.uploader.upload(imageFile.path, {
+        folder: "DoctorHub/doctors",
+      });
+
+      imageUrl = upload.secure_url;
+    }
+
+    const updatedDoctor = await doctorModel.findByIdAndUpdate(
+      doctorId,
+      {
+        name,
+        email,
+        speciality,
+        degree,
+        experience,
+        about,
+        fees,
+        phone,
+        address: JSON.parse(address),
+        image: imageUrl,
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: "Doctor updated successfully",
+      doctor: updatedDoctor,
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+const deleteDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.body;
+
+    const doctor = await doctorModel.findById(doctorId);
+    if (!doctor) {
+      return res.json({ success: false, message: "Doctor not found" });
+    }
+
+    // delete image from cloudinary
+    if (doctor.image) {
+      const publicId = doctor.image.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`DoctorHub/doctors/${publicId}`);
+    }
+
+    await doctorModel.findByIdAndDelete(doctorId);
+
+    res.json({ success: true, message: "Doctor deleted successfully" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -207,4 +296,6 @@ export {
   appointmentsAdmin,
   appointmentCancel,
   adminDashboard,
+  updateDoctor,
+  deleteDoctor,
 };
