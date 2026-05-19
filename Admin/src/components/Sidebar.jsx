@@ -3,6 +3,7 @@ import { AdminContext } from "../context/AdminContext";
 import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { DoctorContext } from "../context/DontorContext";
+import { BsChatDotsFill } from "react-icons/bs";
 
 const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
@@ -101,7 +102,7 @@ const Sidebar = () => {
             }
             to={"/chat"}
           >
-            <img src={assets.people_icon} alt="" />
+             <BsChatDotsFill className="text-xl text-gray-600" />
             <p className="hidden md:block">Chat</p>
           </NavLink>
         </ul>

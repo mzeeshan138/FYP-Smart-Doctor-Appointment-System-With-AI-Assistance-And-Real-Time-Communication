@@ -5,7 +5,8 @@ import axios from "axios";
 export const AppContext = createContext();
 
 const AppContextProvider = (props) => {
-  const currency = "$";
+  // const currency = "$";
+  const currency = "Rs ";
   const [isLoading, setIsLoading] = useState(false);
   console.log("isLoading:", isLoading);
   const calculateAge = (dob) => {
