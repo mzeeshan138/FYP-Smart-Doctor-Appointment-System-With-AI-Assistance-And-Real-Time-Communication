@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import RelatedDoctors from "../components/RelatedDoctors";
@@ -9,9 +9,9 @@ import SlotSelector from "../components/SlotSelector";
 
 const Appointment = () => {
   const { docId } = useParams();
-  const { doctors, currencySymbol, token, backendUrl, getDoctorsData } =
+  const { doctors, currencySymbol, token, backendUrl, clearAuth } =
     useContext(AppContext);
-  const daysOfWeek = ["SUN", "MON", "TUE", "WEND", "THE", "FRI", "SAT"];
+  const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
   const [docInfo, setDocInfo] = useState(null);
   const [docSlots, setDocSlots] = useState([]);
@@ -19,13 +19,14 @@ const Appointment = () => {
   const [slotTime, setSlotTime] = useState("");
 
   const navigate = useNavigate();
-  const containerRef = useRef(null);
+  const location = useLocation();
+  const [booking, setBooking] = useState(false);
 
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollLeft = containerRef.current.scrollWidth;
-    }
-  }, [docSlots]);
+  const redirectToLogin = () => {
+    toast.warn("Please login to book an appointment");
+    navigate("/login", { state: { from: location.pathname } });
+  };
+
   useEffect(() => {
     fetchDocInfo();
   }, [doctors, docId]);
@@ -40,7 +41,7 @@ const Appointment = () => {
   };
 
   const checkSlotAvailable = (docInfo, slotDate, slotTime) => {
-    if (!docInfo || !docInfo.slots_booked) return true; // if  docinfo is null
+    if (!docInfo || !docInfo.slots_booked) return true;
     return !docInfo.slots_booked?.[slotDate]?.includes(slotTime);
   };
 
@@ -48,7 +49,6 @@ const Appointment = () => {
     setDocSlots([]);
 
     const today = new Date();
-
     const generateSlotDate = (date) =>
       `${date.getDate()}_${date.getMonth() + 1}_${date.getFullYear()}`;
 
@@ -59,7 +59,6 @@ const Appointment = () => {
       const endTime = new Date(currentDate);
       endTime.setHours(21, 0, 0, 0);
 
-      // Set the start time
       if (i === 0) {
         currentDate.setHours(Math.max(currentDate.getHours() + 1, 10));
         currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0);
@@ -85,14 +84,13 @@ const Appointment = () => {
         if (isAvailable) {
           timeSlots.push({
             datetime: new Date(currentDate),
-            time: isAvailable ? formattedTime : undefined,
+            time: formattedTime,
           });
         }
 
         currentDate.setMinutes(currentDate.getMinutes() + 30);
       }
 
-      // If no available slots, add a placeholder
       if (timeSlots.length === 0) {
         timeSlots.push({ datetime: new Date(currentDate), time: false });
       }
@@ -103,133 +101,170 @@ const Appointment = () => {
 
   const bookAppointment = async () => {
     if (!token) {
-      toast.warn("Login to book appointment");
-      return navigate("/login");
+      redirectToLogin();
+      return;
     }
 
     if (!slotTime) {
-      return toast.error("Please select the slot time");
+      toast.error("Please select a slot time");
+      return;
     }
+
+    setBooking(true);
     try {
       const date = docSlots[slotIndex][0].datetime;
-
-      let day = date.getDate();
-      let month = date.getMonth() + 1;
-      let year = date.getFullYear();
-
-      const slotDate = day + "_" + month + "_" + year;
+      const slotDate = `${date.getDate()}_${date.getMonth() + 1}_${date.getFullYear()}`;
 
       const { data } = await axios.post(
-        backendUrl + "/api/user/book-appointment",
+        backendUrl + "/api/user/stripe/create-deposit-session",
         { docId, slotDate, slotTime },
         { headers: { token } }
       );
 
-      if (data.success) {
-        toast.success(data.message);
-        getDoctorsData();
-        navigate("/my-appointments");
-      } else {
-        toast.error(data.message);
+      if (data.success && data.url) {
+        const payLabel = data.stripeCurrency
+          ? `$${data.stripeAmount} USD`
+          : `${currencySymbol}${data.depositAmountRs}`;
+        toast.info(`Pay ${payLabel} deposit (10%) on Stripe to confirm booking`);
+        window.location.href = data.url;
+        return;
       }
+
+      const message = data.message || "Unable to start payment";
+
+      if (
+        message.toLowerCase().includes("not authorized") ||
+        message.toLowerCase().includes("login again")
+      ) {
+        clearAuth();
+        redirectToLogin();
+        return;
+      }
+
+      toast.error(message);
     } catch (error) {
-      console.log("error:", error);
-      toast.error(error.message);
+      const message =
+        error.response?.data?.message || error.message || "Booking failed";
+
+      if (
+        message.toLowerCase().includes("not authorized") ||
+        message.toLowerCase().includes("login again")
+      ) {
+        clearAuth();
+        redirectToLogin();
+        return;
+      }
+
+      toast.error(message);
+    } finally {
+      setBooking(false);
     }
   };
+
+  const depositRs = docInfo
+    ? Math.round(docInfo.fees * 0.1 * 100) / 100
+    : 0;
+
   return (
     docInfo && (
-      <div>
-        {/* --------------Doctor Details ----------------- */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div>
-            <img
-              className="bg-primary w-full sm:max-w-72 rounded-lg  "
-              src={docInfo.image}
-              alt=""
-            />
-          </div>
+      <div className="max-w-2xl mx-auto py-3 px-2 sm:px-4">
+        {/* Doctor card — compact */}
+        <div className="flex gap-3 sm:gap-4 items-start bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+          <img
+            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg bg-primary shrink-0"
+            src={docInfo.image}
+            alt={docInfo.name}
+          />
 
-          <div className="flex-1 border border-gray-400 rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[80px] sm:mt-0">
-            {/* --------------- Doc info name , degree , experience      --------------- */}
-            <p className="flex items-center gap-2 text-2xl font-medium text-gray-900">
+          <div className="flex-1 min-w-0">
+            <p className="flex items-center gap-1.5 text-base sm:text-lg font-semibold text-gray-900 truncate">
               {docInfo.name}
-              <img className="w-5" src={assets.verified_icon} alt="" />
+              <img className="w-4 shrink-0" src={assets.verified_icon} alt="" />
             </p>
-            <div className="flex items-center gap-2 text-sm mt-1 text-gray-600">
-              <p>
-                {docInfo.degree} - {docInfo.speciality}
-              </p>
-              <button className=" py-0.5 px-2 border text-xs rounded-full">
-                {docInfo.experience}{" "}
-              </button>
-            </div>
-
-            {/* ------------- Doctor Avbout */}
-            <div>
-              <p className="flex items-center gap-1 text-sm font-medium text-gray-900mt-3">
-                About <img src={assets.info_icon} alt="" />
-              </p>
-              <p className="text-sm text-gray-500 max-w-[700px] mt-1">
-                {docInfo.about}
-              </p>
-            </div>
-            <p className="text-gray-500 font-medium mt-4">
-              Appointment fee:{" "}
-              <span className="text-gray-600">
-                {currencySymbol}
-                {docInfo.fees}
-              </span>{" "}
+            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+              {docInfo.degree} · {docInfo.speciality}
+            </p>
+            <span className="inline-block mt-1 text-[10px] sm:text-xs border px-2 py-0.5 rounded-full text-gray-500">
+              {docInfo.experience}
+            </span>
+            <p className="text-xs text-gray-500 mt-2 line-clamp-2">
+              {docInfo.about}
+            </p>
+            <p className="text-xs sm:text-sm font-medium text-gray-700 mt-2">
+              Fee: {currencySymbol}
+              {docInfo.fees}
+              <span className="text-blue-600 font-normal ml-1">
+                · Deposit {currencySymbol}
+                {depositRs} (10%)
+              </span>
+            </p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Charged in USD on Stripe sandbox. Pay remaining 90% later in My
+              Appointments.
             </p>
           </div>
         </div>
 
-        {/* ---------- Booking slots */}
-
-        <div className="sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700">
-          <p>Booking slots</p>
-          <div className="flex gap-3 items-center w-full overflow-x-scroll mt-4">
-            {docSlots.length &&
-              docSlots.map((item, index) => (
-                <div
-                  onClick={() => setSlotIndex(index)}
-                  className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${
-                    slotIndex === index
-                      ? "bg-primary text-white"
-                      : "border border-gray-200"
-                  }`}
-                  key={index}
-                >
-                  <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
-                  <p>{item[0] && item[0].datetime.getDate()}</p>
-                </div>
-              ))}
+        {/* Booking slots — compact */}
+        <div className="mt-4 bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+          <p className="text-sm font-medium text-gray-700 mb-2">Select date</p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {docSlots.map((item, index) => (
+              <button
+                type="button"
+                onClick={() => setSlotIndex(index)}
+                className={`text-center py-2 px-3 min-w-[44px] rounded-lg text-xs shrink-0 transition ${
+                  slotIndex === index
+                    ? "bg-primary text-white"
+                    : "border border-gray-200 text-gray-600 hover:border-primary"
+                }`}
+                key={index}
+              >
+                <p className="font-medium">
+                  {item[0] && daysOfWeek[item[0].datetime.getDay()]}
+                </p>
+                <p>{item[0] && item[0].datetime.getDate()}</p>
+              </button>
+            ))}
           </div>
 
+          <p className="text-sm font-medium text-gray-700 mt-3 mb-1">
+            Select time
+          </p>
           <SlotSelector
             docSlots={docSlots}
             slotIndex={slotIndex}
             slotTime={slotTime}
             setSlotTime={setSlotTime}
           />
-          <button
-            onClick={bookAppointment}
-            className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-5"
-          >
-            Book an appointment
-          </button>
-          {token && (
-            <Link
-              to="/chat"
-              state={{ doctor: docInfo }}
-              className="inline-block ml-4 bg-green-500 text-white text-sm font-light px-10 py-3 rounded-full my-5"
+
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            <button
+              type="button"
+              onClick={bookAppointment}
+              disabled={booking}
+              className="bg-primary text-white text-xs sm:text-sm px-5 py-2 rounded-full disabled:opacity-60"
             >
-              Message Doctor
-            </Link>
+              {booking ? "Opening Stripe..." : "Pay 10% & Book"}
+            </button>
+            {token && (
+              <Link
+                to="/chat"
+                state={{ doctor: docInfo }}
+                className="text-xs sm:text-sm px-4 py-2 rounded-full border border-green-500 text-green-600 hover:bg-green-50"
+              >
+                Message Doctor
+              </Link>
+            )}
+          </div>
+
+          {!token && (
+            <p className="text-xs text-orange-600 mt-2">
+              Login required to book an appointment.
+            </p>
           )}
         </div>
 
-        {/* ------------------listing related doctors */}
         <RelatedDoctors docId={docId} speciality={docInfo.speciality} />
       </div>
     )

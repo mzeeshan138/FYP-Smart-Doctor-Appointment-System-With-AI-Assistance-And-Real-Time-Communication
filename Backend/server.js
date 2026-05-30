@@ -10,6 +10,7 @@ import aiChatRouter from "./routes/aiChatRoutes.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import userRouter from "./routes/usersRoute.js";
 import chatRouter from "./routes/chatRoutes.js"; 
+import { stripeWebhook } from "./controllers/stripeController.js";
 
 //Setting Environment
 if (process.env.NODE_ENV !== 'PRODUCTION') {
@@ -19,6 +20,13 @@ if (process.env.NODE_ENV !== 'PRODUCTION') {
 //app config
 const app = express();
 const port = process.env.PORT || 4000;
+
+// Stripe webhook must receive raw body (before express.json)
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhook
+);
 
 // ==================
 // Create HTTP Server

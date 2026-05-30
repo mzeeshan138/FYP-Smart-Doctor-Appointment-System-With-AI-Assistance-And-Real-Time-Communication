@@ -45,23 +45,25 @@ const SlotSelector = ({ docSlots, slotIndex, slotTime, setSlotTime }) => {
       <div className="overflow-x-hidden">
         <div
           ref={containerRef}
-          className="flex items-center gap-3 w-full overflow-x-hidden snap-x snap-mandatory  px-8 py-2 scrollbar-hide"
+          className="flex items-center gap-2 w-full overflow-x-auto snap-x snap-mandatory py-1 scrollbar-hide"
         >
           {docSlots.length > 0 &&
             docSlots[slotIndex].map((item, index) => (
-              <p
-                onClick={() => setSlotTime(item?.time)}
-                className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer snap-end ${
+              <button
+                type="button"
+                onClick={() => item.time && setSlotTime(item.time)}
+                disabled={!item.time}
+                className={`text-xs flex-shrink-0 px-3 py-1.5 rounded-full snap-end transition ${
                   item.time === slotTime
                     ? "bg-primary text-white"
-                    : "text-gray-400 border border-gray-300"
+                    : item.time
+                      ? "text-gray-500 border border-gray-300 hover:border-primary"
+                      : "text-gray-300 border border-gray-200 cursor-not-allowed"
                 }`}
                 key={index}
               >
-                {item.time === false
-                  ? "No slot available"
-                  : item?.time?.toLowerCase()}
-              </p>
+                {item.time === false ? "No slot" : item?.time?.toLowerCase()}
+              </button>
             ))}
         </div>
       </div>

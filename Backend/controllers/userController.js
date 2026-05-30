@@ -6,7 +6,6 @@ import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
-import razorpay from "razorpay";
  import Conversation from "../models/conversationModel.js";
 import emailVerificationModel from "../models/emailVerificationModel.js";
 // API for register user
@@ -155,120 +154,13 @@ const updateProfile = async (req, res) => {
 };
 
 
-//API to book appointment
+//API to book appointment — requires Stripe deposit payment first
 const bookAppointment = async (req, res) => {
-  try {
-    const { userId, docId, slotDate, slotTime } = req.body;
-    const docData = await doctorModel.findById(docId).select("-password");
-    
-    // ================= CHECK EXISTING ACTIVE APPOINTMENT =================
-
-    const existingAppointment = await appointmentModel.findOne({
-      userId,
-      cancelled: false,
-      isCompleted: false,
-    });
-
-    if (existingAppointment) {
-      return res.json({
-        success: false,
-        message:
-          "You already have an active appointment. Complete or cancel it before booking a new one.",
-      });
-    }
-
-    if (!docData.available) {
-      return res.json({ success: false, message: "Doctor is not available " });
-    }
-
-    let slots_booked = docData.slots_booked;
-
-    //checking for slot availablity
-    if (slots_booked[slotDate]) {
-      if (slots_booked[slotDate].includes(slotTime)) {
-        return res.json({
-          success: false,
-          message: "Slot not availble ",
-        });
-      } else {
-        slots_booked[slotDate].push(slotTime);
-      }
-    } else {
-      slots_booked[slotDate] = [];
-      slots_booked[slotDate].push(slotTime);
-    }
-
-    const userData = await userModel.findById(userId).select("-password");
-
-    // ================= ACCOUNT RESTRICTION CHECK =================
-
-    const currentYear = new Date().getFullYear();
-
-    const yearData =
-      userData.yearlyCancelledAppointments.find(
-        (y) => y.year === currentYear
-      );
-
-    // auto green status for new year
-    if (!yearData || yearData.cancelAppointmentCount === 0) {
-      userData.accountStatus = "green";
-      await userData.save();
-    }
-
-    // stop booking if limit reached
-    else if (
-      yearData.cancelAppointmentCount >=
-      Number(process.env.CANCEL_APPOINTMENT_LIMIT)
-    ) {
-        return res.json({
-          success: false,
-          message:
-            "Your account is restricted due to repeated appointment cancellations",
-        });
-      }
-
-    // ================= OLD FUNCTIONALITY =================
-
-    delete docData.slots_booked;
-
-    const appointmentData = {
-      userId,
-      docId,
-      userData,
-      docData,
-      amount: docData.fees,
-      slotTime,
-      slotDate,
-      date: Date.now(),
-    };
-
-    const newAppointment = new appointmentModel(appointmentData);
-    await newAppointment.save();
-
-    //save new slots data in docdata
-
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
-
-    // --- Create Conversation Logic Here ---
-        const existingConversation = await Conversation.findOne({
-          docId,
-          userId,
-          appointmentId: newAppointment._id,
-        });
-    
-        if (!existingConversation) {
-          await Conversation.create({
-          docId,
-          userId,
-          appointmentId: newAppointment._id,
-        });
-        }
-
-    res.json({ success: true, message: "Appointment Booked" });
-  } catch (error) {
-    console.log("error:", error);
-    res.json({ success: false, message: error.message });
-  }
+  return res.json({
+    success: false,
+    message:
+      "Please pay the 10% deposit via Stripe to book an appointment.",
+  });
 };
 
 //API to get user appointments for backend my-appointments page
@@ -369,64 +261,7 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-// API for make payment of appointment using razorpay
-const razorpayInstance = new razorpay({
-  key_id: "123",
-  key_secret: "123",
-});
-
-const paymentRazorpay = async (req, res) => {
-  try {
-    const { appointmentId } = req.body;
-
-    const appointmentData = await appointmentModel.findById(appointmentId);
-
-    if (!appointmentData) {
-      return res.json({
-        success: false,
-        message: "Appointment cancelled or not found",
-      });
-    }
-
-    // creating options for razorpay payment
-
-    const options = {
-      amount: appointmentData.amount * 100,
-      currency: "PKR",
-      receipt: appointmentId,
-    };
-
-    //creating of an order
-    const order = await razorpayInstance.orders.create(options);
-
-    res.json({ success: true, order });
-  } catch (error) {
-    console.log("error:", error);
-    res.json({ success: false, message: error.message });
-  }
-};
-
-// API to verify payment
-const verifyRazorpay = async (req, res) => {
-  try {
-    const { razorpay_order_id } = req.body;
-    const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
-
-    if (orderInfo.status === "paid") {
-      await appointmentModel.findByIdAndUpdate(orderInfo.receipt, {
-        payment: true,
-      });
-
-      res.json({ success: true, message: "Payment successful" });
-    } else {
-      res.json({ success: false, message: "Payment failed" });
-    }
-  } catch (error) {
-    console.log("error:", error);
-    res.json({ success: false, message: error.message });
-  }
-};
-
+// API for upload payment proof (legacy Raast — optional)
 const uploadPaymentProof = async (req, res) => {
   const { amount,tid,name } = req.body;
   const { id } = req.params;
@@ -461,7 +296,5 @@ export {
   bookAppointment,
   listAppointment,
   cancelAppointment,
-  paymentRazorpay,
-  verifyRazorpay,
   uploadPaymentProof
 };

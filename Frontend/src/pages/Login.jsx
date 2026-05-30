@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const SIGNUP_STEPS = {
   EMAIL: "email",
@@ -13,8 +13,10 @@ const SIGNUP_STEPS = {
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || "/";
 
-  const [state, setState] = useState("Sign Up");
+  const [state, setState] = useState("Login");
   const [signupStep, setSignupStep] = useState(SIGNUP_STEPS.EMAIL);
 
   const [email, setEmail] = useState("");
@@ -24,6 +26,8 @@ const Login = () => {
   const [verificationToken, setVerificationToken] = useState("");
   const [sendingCode, setSendingCode] = useState(false);
   const [verifyingCode, setVerifyingCode] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const resetSignupFlow = () => {
     setSignupStep(SIGNUP_STEPS.EMAIL);
@@ -31,7 +35,6 @@ const Login = () => {
     setVerificationToken("");
     setName("");
     setPassword("");
-    setEmail("");
   };
 
   const switchToLogin = () => {
@@ -45,7 +48,8 @@ const Login = () => {
   };
 
   const handleSendCode = async (event) => {
-    event.preventDefault();
+    event?.preventDefault();
+
     if (!email.trim()) {
       toast.error("Please enter your email");
       return;
@@ -55,7 +59,7 @@ const Login = () => {
     try {
       const { data } = await axios.post(
         backendUrl + "/api/user/send-verification-code",
-        { email }
+        { email: email.trim() }
       );
 
       if (data.success) {
@@ -73,6 +77,7 @@ const Login = () => {
 
   const handleVerifyCode = async (event) => {
     event.preventDefault();
+
     if (!verificationCode.trim()) {
       toast.error("Please enter the verification code");
       return;
@@ -82,7 +87,7 @@ const Login = () => {
     try {
       const { data } = await axios.post(
         backendUrl + "/api/user/verify-email-code",
-        { email, code: verificationCode }
+        { email: email.trim(), code: verificationCode.trim() }
       );
 
       if (data.success) {
@@ -101,11 +106,29 @@ const Login = () => {
 
   const handleRegister = async (event) => {
     event.preventDefault();
+
+    if (!verificationToken) {
+      toast.error("Please verify your email before creating an account");
+      setSignupStep(SIGNUP_STEPS.EMAIL);
+      return;
+    }
+
+    if (!name.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    setRegistering(true);
     try {
       const { data } = await axios.post(backendUrl + "/api/user/register", {
-        name,
+        name: name.trim(),
         password,
-        email,
+        email: email.trim(),
         verificationToken,
       });
 
@@ -113,38 +136,52 @@ const Login = () => {
         localStorage.setItem("token", data.token);
         setToken(data.token);
         toast.success(data.message || "Account created successfully");
+        navigate(redirectTo);
       } else {
         toast.error(data.message);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setRegistering(false);
     }
   };
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+
+    if (!email.trim() || !password) {
+      toast.error("Please enter email and password");
+      return;
+    }
+
+    setLoggingIn(true);
     try {
       const { data } = await axios.post(backendUrl + "/api/user/login", {
         password,
-        email,
+        email: email.trim(),
       });
 
       if (data.success) {
         localStorage.setItem("token", data.token);
         setToken(data.token);
+        toast.success("Login successful");
+        navigate(redirectTo);
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setLoggingIn(false);
     }
   };
 
   useEffect(() => {
     if (token) {
-      navigate("/");
+      navigate(redirectTo);
     }
-  }, [token, navigate]);
+  }, [token, navigate, redirectTo]);
 
   const renderSignupStep = () => {
     if (signupStep === SIGNUP_STEPS.EMAIL) {
@@ -207,7 +244,7 @@ const Login = () => {
           <button
             type="button"
             onClick={() => setSignupStep(SIGNUP_STEPS.EMAIL)}
-            className="text-primary underline text-sm"
+            className="text-primary underline text-sm text-left"
           >
             Change email
           </button>
@@ -215,7 +252,7 @@ const Login = () => {
             type="button"
             onClick={handleSendCode}
             disabled={sendingCode}
-            className="text-zinc-500 underline text-sm disabled:opacity-60"
+            className="text-zinc-500 underline text-sm text-left disabled:opacity-60"
           >
             {sendingCode ? "Resending..." : "Resend code"}
           </button>
@@ -261,9 +298,10 @@ const Login = () => {
         </div>
         <button
           type="submit"
-          className="bg-primary text-white w-full py-2 rounded-md text-base"
+          disabled={registering}
+          className="bg-primary text-white w-full py-2 rounded-md text-base disabled:opacity-60"
         >
-          Create Account
+          {registering ? "Creating account..." : "Create Account"}
         </button>
       </form>
     );
@@ -275,6 +313,12 @@ const Login = () => {
         <p className="text-2xl font-semibold">
           {state === "Sign Up" ? "Create Account" : "Login"}
         </p>
+
+        {redirectTo !== "/" && (
+          <p className="text-sm text-blue-600">
+            Login or sign up to continue booking your appointment.
+          </p>
+        )}
 
         {state === "Sign Up" ? (
           <>
@@ -315,9 +359,10 @@ const Login = () => {
             </div>
             <button
               type="submit"
-              className="bg-primary text-white w-full py-2 rounded-md text-base"
+              disabled={loggingIn}
+              className="bg-primary text-white w-full py-2 rounded-md text-base disabled:opacity-60"
             >
-              Login
+              {loggingIn ? "Logging in..." : "Login"}
             </button>
             <p>
               Create a new account?{" "}

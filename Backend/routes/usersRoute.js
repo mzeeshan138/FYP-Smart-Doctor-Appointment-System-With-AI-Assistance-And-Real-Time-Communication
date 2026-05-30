@@ -8,14 +8,17 @@ import {
   bookAppointment,
   listAppointment,
   cancelAppointment,
-  paymentRazorpay,
   uploadPaymentProof,
-  verifyRazorpay,
 } from "../controllers/userController.js";
 import {
   sendVerificationCode,
   verifyEmailCode,
 } from "../controllers/emailVerificationController.js";
+import {
+  createDepositSession,
+  createBalanceSession,
+  verifyStripeSession,
+} from "../controllers/stripeController.js";
 import authUser from "../middlewares/authUser.js";
 import requireVerifiedEmail from "../middlewares/requireVerifiedEmail.js";
 import upload from "../middlewares/multer.js";
@@ -34,10 +37,11 @@ userRouter.post(
   updateProfile
 );
 userRouter.post("/book-appointment", authUser, bookAppointment);
+userRouter.post("/stripe/create-deposit-session", authUser, createDepositSession);
+userRouter.post("/stripe/create-balance-session", authUser, createBalanceSession);
+userRouter.post("/stripe/verify-session", authUser, verifyStripeSession);
 userRouter.get("/appointments", authUser, listAppointment);
 userRouter.post("/appointments/payment/:id",uploadPaymentProof);
 userRouter.post("/cancle-appointment", authUser, cancelAppointment);
-userRouter.post("/payment-razorpay", authUser, paymentRazorpay);
-userRouter.post("/verify-razorpay", authUser, verifyRazorpay);
 
 export default userRouter;

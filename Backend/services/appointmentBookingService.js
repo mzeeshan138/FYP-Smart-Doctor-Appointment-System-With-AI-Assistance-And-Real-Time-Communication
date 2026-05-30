@@ -1,0 +1,136 @@
+import userModel from "../models/userModel.js";
+import doctorModel from "../models/doctorModel.js";
+import appointmentModel from "../models/appointmentModel.js";
+import Conversation from "../models/conversationModel.js";
+
+export const calculateDepositAmount = (totalFees) =>
+  Math.round(totalFees * 0.1 * 100) / 100;
+
+export const calculateBalanceAmount = (totalFees, depositAmount) =>
+  Math.round((totalFees - depositAmount) * 100) / 100;
+
+export const createAppointmentAfterDeposit = async ({
+  userId,
+  docId,
+  slotDate,
+  slotTime,
+  depositAmount,
+}) => {
+  const docData = await doctorModel.findById(docId).select("-password");
+
+  if (!docData) {
+    throw new Error("Doctor not found");
+  }
+
+  const existingAppointment = await appointmentModel.findOne({
+    userId,
+    cancelled: false,
+    isCompleted: false,
+  });
+
+  if (existingAppointment) {
+    throw new Error(
+      "You already have an active appointment. Complete or cancel it before booking a new one."
+    );
+  }
+
+  if (!docData.available) {
+    throw new Error("Doctor is not available");
+  }
+
+  let slots_booked = docData.slots_booked || {};
+
+  if (slots_booked[slotDate]?.includes(slotTime)) {
+    throw new Error("Slot not available");
+  }
+
+  if (slots_booked[slotDate]) {
+    slots_booked[slotDate].push(slotTime);
+  } else {
+    slots_booked[slotDate] = [slotTime];
+  }
+
+  const userData = await userModel.findById(userId).select("-password");
+
+  if (!userData) {
+    throw new Error("User not found");
+  }
+
+  const currentYear = new Date().getFullYear();
+  const yearData = userData.yearlyCancelledAppointments.find(
+    (y) => y.year === currentYear
+  );
+
+  if (!yearData || yearData.cancelAppointmentCount === 0) {
+    userData.accountStatus = "green";
+    await userData.save();
+  } else if (
+    yearData.cancelAppointmentCount >=
+    Number(process.env.CANCEL_APPOINTMENT_LIMIT)
+  ) {
+    throw new Error(
+      "Your account is restricted due to repeated appointment cancellations"
+    );
+  }
+
+  const totalFees = docData.fees;
+  const balanceAmount = calculateBalanceAmount(totalFees, depositAmount);
+
+  delete docData.slots_booked;
+
+  const appointmentData = {
+    userId,
+    docId,
+    userData,
+    docData,
+    amount: totalFees,
+    depositAmount,
+    balanceAmount,
+    depositPaid: true,
+    balancePaid: false,
+    payment: false,
+    slotTime,
+    slotDate,
+    date: Date.now(),
+  };
+
+  const newAppointment = new appointmentModel(appointmentData);
+  await newAppointment.save();
+
+  await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
+  const existingConversation = await Conversation.findOne({
+    docId,
+    userId,
+    appointmentId: newAppointment._id,
+  });
+
+  if (!existingConversation) {
+    await Conversation.create({
+      docId,
+      userId,
+      appointmentId: newAppointment._id,
+    });
+  }
+
+  return newAppointment;
+};
+
+export const validateSlotForBooking = async (docId, slotDate, slotTime) => {
+  const docData = await doctorModel.findById(docId).select("-password");
+
+  if (!docData) {
+    return { valid: false, message: "Doctor not found" };
+  }
+
+  if (!docData.available) {
+    return { valid: false, message: "Doctor is not available" };
+  }
+
+  const slots_booked = docData.slots_booked || {};
+  if (slots_booked[slotDate]?.includes(slotTime)) {
+    return { valid: false, message: "Slot not available" };
+  }
+
+  return { valid: true, docData };
+};
