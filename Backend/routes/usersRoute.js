@@ -12,12 +12,19 @@ import {
   uploadPaymentProof,
   verifyRazorpay,
 } from "../controllers/userController.js";
+import {
+  sendVerificationCode,
+  verifyEmailCode,
+} from "../controllers/emailVerificationController.js";
 import authUser from "../middlewares/authUser.js";
+import requireVerifiedEmail from "../middlewares/requireVerifiedEmail.js";
 import upload from "../middlewares/multer.js";
 
 const userRouter = express.Router();
 
-userRouter.post("/register", registerUser);
+userRouter.post("/send-verification-code", sendVerificationCode);
+userRouter.post("/verify-email-code", verifyEmailCode);
+userRouter.post("/register", requireVerifiedEmail, registerUser);
 userRouter.post("/login", loginUser);
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(

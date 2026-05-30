@@ -8,6 +8,7 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import razorpay from "razorpay";
  import Conversation from "../models/conversationModel.js";
+import emailVerificationModel from "../models/emailVerificationModel.js";
 // API for register user
 
 const registerUser = async (req, res) => {
@@ -17,8 +18,17 @@ const registerUser = async (req, res) => {
       return res.json({ success: false, message: "Missing Detail" });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (normalizedEmail !== req.verifiedEmail) {
+      return res.json({
+        success: false,
+        message: "Registered email must match verified email",
+      });
+    }
+
     //validating email format
-    if (!validator.isEmail(email)) {
+    if (!validator.isEmail(normalizedEmail)) {
       return res.json({ success: false, message: "Enter a valid email" });
     }
 
@@ -28,7 +38,7 @@ const registerUser = async (req, res) => {
     }
 
     //check user existed
-    const existedUser = await userModel.findOne({ email });
+    const existedUser = await userModel.findOne({ email: normalizedEmail });
 
     if (existedUser) {
       return res.status(409).json({
@@ -43,7 +53,7 @@ const registerUser = async (req, res) => {
 
     const userData = {
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
     };
 
@@ -51,9 +61,11 @@ const registerUser = async (req, res) => {
 
     const user = await newUser.save();
 
+    await emailVerificationModel.deleteOne({ email: normalizedEmail });
+
     const token = jwt.sign({ id: user._id }, "awkmadrista");
 
-    res.json({ success: true, token });
+    res.json({ success: true, token, message: "Account created successfully" });
   } catch (error) {
     console.log("error:", error);
 
