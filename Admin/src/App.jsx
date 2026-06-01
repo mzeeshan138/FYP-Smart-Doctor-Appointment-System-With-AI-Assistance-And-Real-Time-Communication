@@ -19,6 +19,7 @@ import DoctorProfile from "./pages/Doctor/DoctorProfile";
 import TopLoadingBar from "./components/TopLoadingBar";
 import Chat from './pages/Chat'
 import EditDoctor from "./pages/Admin/EditDoctor";
+import PatientBookingRestrictions from "./pages/Admin/PatientBookingRestrictions";
 const App = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken } = useContext(DoctorContext);
@@ -40,6 +41,10 @@ const App = () => {
             <Route path="/add-doctor" element={<AddDoctor />} />
             <Route path="/doctor-list" element={<DoctorsList />} />
             <Route path="/edit-doctor/:id" element={<EditDoctor />} />
+            <Route
+              path="/patient-restrictions"
+              element={<PatientBookingRestrictions />}
+            />
 
             {/* Doctor Routes */}
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />

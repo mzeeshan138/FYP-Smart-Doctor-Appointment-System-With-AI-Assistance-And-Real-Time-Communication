@@ -8,7 +8,12 @@ import {
   appointmentsAdmin,
   loginAdmin,
   updateDoctor,
-   deleteDoctor
+  deleteDoctor,
+  applyBookingRestriction,
+  liftBookingRestriction,
+  getUserBookingRestriction,
+  allUsers,
+  updateUserAccountStatus,
 } from "../controllers/adminController.js";
 import upload from "../middlewares/multer.js";
 import authAdmin from "../middlewares/authAdmin.js";
@@ -25,5 +30,18 @@ adminRouter.post("/cancel-appointment", authAdmin, appointmentCancel);
 adminRouter.get("/dashboard", authAdmin, adminDashboard);
 adminRouter.post("/update-doctor", authAdmin, upload.single("image"), updateDoctor);
 adminRouter.post("/delete-doctor", authAdmin, deleteDoctor);
+adminRouter.post("/apply-booking-restriction", authAdmin, applyBookingRestriction);
+adminRouter.post("/lift-booking-restriction", authAdmin, liftBookingRestriction);
+adminRouter.get(
+  "/user-booking-restriction/:userId",
+  authAdmin,
+  getUserBookingRestriction
+);
+adminRouter.get("/all-users", authAdmin, allUsers);
+adminRouter.post(
+  "/update-account-status",
+  authAdmin,
+  updateUserAccountStatus
+);
 
 export default adminRouter;

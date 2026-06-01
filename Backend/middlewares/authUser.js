@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-
-//user authentication middleware
+import userModel from "../models/userModel.js";
+import { getAccountBannedMessage } from "../utils/accountStatusMessages.js";
 
 const authUser = async (req, res, next) => {
   try {
@@ -13,9 +13,26 @@ const authUser = async (req, res, next) => {
     }
 
     const token_decode = jwt.verify(token, "awkmadrista");
+    const user = await userModel
+      .findById(token_decode.id)
+      .select("accountStatus");
+
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "Not Authorized Login Again",
+      });
+    }
+
+    if (user.accountStatus === "blocked") {
+      return res.json({
+        success: false,
+        accountBanned: true,
+        message: getAccountBannedMessage(),
+      });
+    }
 
     req.body.userId = token_decode.id;
-
     next();
   } catch (error) {
     console.log("error:", error);

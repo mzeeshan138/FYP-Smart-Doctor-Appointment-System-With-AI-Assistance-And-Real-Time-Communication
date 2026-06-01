@@ -21,12 +21,22 @@ const AppContextProvider = (props) => {
     setUserData(false);
   };
 
+  const handleBannedAccount = (data) => {
+    if (data?.accountBanned) {
+      clearAuth();
+      toast.error(data.message, { autoClose: 8000 });
+      return true;
+    }
+    return false;
+  };
+
   const isAuthError = (message = "") => {
     const msg = message.toLowerCase();
     return (
       msg.includes("not authorized") ||
       msg.includes("login again") ||
-      msg.includes("invalid credentials")
+      msg.includes("invalid credentials") ||
+      msg.includes("banned")
     );
   };
 
@@ -51,12 +61,12 @@ const AppContextProvider = (props) => {
 
       if (data.success) {
         setUserData(data.userData);
+      } else if (handleBannedAccount(data)) {
+        return;
+      } else if (isAuthError(data.message)) {
+        clearAuth();
       } else {
-        if (isAuthError(data.message)) {
-          clearAuth();
-        } else {
-          toast.error(data.message);
-        }
+        toast.error(data.message);
       }
     } catch (error) {
       console.log("error:", error);
@@ -96,6 +106,13 @@ const AppContextProvider = (props) => {
     const responseInterceptor = axios.interceptors.response.use(
       (response) => {
         setIsLoading(false);
+        const data = response?.data;
+        if (data?.accountBanned) {
+          localStorage.removeItem("token");
+          setToken("");
+          setUserData(false);
+          toast.error(data.message, { autoClose: 8000 });
+        }
         return response;
       },
       (error) => {

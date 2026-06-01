@@ -13,6 +13,8 @@ import {
   deleteConversationForAppointment,
   releaseDoctorSlot,
 } from "../controllers/appointmentController.js";
+import { getBookingRestrictionStatus } from "../services/bookingRestrictionService.js";
+import { getAccountBannedMessage } from "../utils/accountStatusMessages.js";
 // API for register user
 
 const registerUser = async (req, res) => {
@@ -90,6 +92,14 @@ const loginUser = async (req, res) => {
       return res.json({ success: false, message: "User does not exist" });
     }
 
+    if (user.accountStatus === "blocked") {
+      return res.json({
+        success: false,
+        accountBanned: true,
+        message: getAccountBannedMessage(),
+      });
+    }
+
     //check for password
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -113,7 +123,11 @@ const getProfile = async (req, res) => {
 
     const userData = await userModel.findById(userId).select("-password");
 
-    res.json({ success: true, userData });
+    res.json({
+      success: true,
+      userData,
+      bookingStatus: getBookingRestrictionStatus(userData),
+    });
   } catch (error) {
     console.log("error:", error);
     res.json({ success: false, message: error.message });

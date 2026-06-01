@@ -2,6 +2,10 @@ import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import Conversation from "../models/conversationModel.js";
+import {
+  checkAllBookingRestrictions,
+  recordSuccessfulBooking,
+} from "./bookingRestrictionService.js";
 
 export const calculateDepositAmount = (totalFees) =>
   Math.round(totalFees * 0.1 * 100) / 100;
@@ -53,37 +57,23 @@ export const validateBookingEligibility = async (
     return { eligible: false, message: "Slot not available" };
   }
 
-  const userData = await userModel.findById(userId).select("-password");
+  const restrictionCheck = await checkAllBookingRestrictions(userId);
 
-  if (!userData) {
-    return { eligible: false, message: "User not found" };
-  }
-
-  const currentYear = new Date().getFullYear();
-  const yearData = userData.yearlyCancelledAppointments.find(
-    (y) => y.year === currentYear
-  );
-
-  if (!yearData || yearData.cancelAppointmentCount === 0) {
-    userData.accountStatus = "green";
-    await userData.save();
-  } else if (
-    yearData.cancelAppointmentCount >=
-    Number(process.env.CANCEL_APPOINTMENT_LIMIT)
-  ) {
+  if (!restrictionCheck.allowed) {
     return {
       eligible: false,
-      message:
-        "Your account is restricted due to repeated appointment cancellations",
+      message: restrictionCheck.message,
+      nextBookingDate: restrictionCheck.nextBookingDate,
     };
   }
 
   return {
     eligible: true,
     docData,
-    userData,
+    userData: restrictionCheck.userData,
     depositAmount: calculateDepositAmount(docData.fees),
     totalFees: docData.fees,
+    cooldownDays: restrictionCheck.cooldownDays,
   };
 };
 
@@ -134,11 +124,13 @@ export const finalizeAppointmentAfterPayment = async ({
     slots_booked[slotDate] = [slotTime];
   }
 
-  const userData = await userModel.findById(userId).select("-password");
+  const restrictionCheck = await checkAllBookingRestrictions(userId);
 
-  if (!userData) {
-    throw new Error("User not found");
+  if (!restrictionCheck.allowed) {
+    throw new Error(restrictionCheck.message);
   }
+
+  const userData = restrictionCheck.userData;
 
   const totalFees = docData.fees;
   const balanceAmount = calculateBalanceAmount(totalFees, depositAmount);
@@ -179,6 +171,8 @@ export const finalizeAppointmentAfterPayment = async ({
       appointmentId: newAppointment._id,
     });
   }
+
+  await recordSuccessfulBooking(userId, newAppointment._id);
 
   return newAppointment;
 };

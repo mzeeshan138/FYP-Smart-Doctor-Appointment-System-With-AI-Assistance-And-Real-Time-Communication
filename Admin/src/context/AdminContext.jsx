@@ -12,6 +12,7 @@ const AdminContextProvider = (props) => {
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState([]);
+  const [patients, setPatients] = useState([]);
 
   const getAllDoctors = async () => {
     try {
@@ -142,6 +143,82 @@ const deleteDoctor = async (doctorId) => {
   }
 };
 
+  const getAllPatients = async () => {
+    try {
+      const { data } = await axios.get(backendUrl + "/api/admin/all-users", {
+        headers: { aToken },
+      });
+
+      if (data.success) {
+        setPatients(data.users);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to load patients");
+    }
+  };
+
+  const applyBookingRestriction = async (payload) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/admin/apply-booking-restriction",
+        payload,
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllPatients();
+        return true;
+      }
+
+      toast.error(data.message);
+      return false;
+    } catch (error) {
+      toast.error(error.message || "Failed to apply restriction");
+      return false;
+    }
+  };
+
+  const updateUserAccountStatus = async (userId, accountStatus) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/admin/update-account-status",
+        { userId, accountStatus },
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllPatients();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to update account status");
+    }
+  };
+
+  const liftBookingRestriction = async (userId) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/admin/lift-booking-restriction",
+        { userId },
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllPatients();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to lift restriction");
+    }
+  };
+
   const backendUrl = "http://localhost:4000";
   const value = {
     aToken,
@@ -158,6 +235,11 @@ const deleteDoctor = async (doctorId) => {
     dashData,
     updateDoctor,
     deleteDoctor,
+    patients,
+    getAllPatients,
+    applyBookingRestriction,
+    liftBookingRestriction,
+    updateUserAccountStatus,
   };
 
 

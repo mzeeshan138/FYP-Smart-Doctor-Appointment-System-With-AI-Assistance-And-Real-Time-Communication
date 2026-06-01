@@ -57,6 +57,27 @@ const userSchema = mongoose.Schema({
 
     default: [],
   },
+
+  // ================= BOOKING RESTRICTION (not cancel) =================
+  bookingRestriction: {
+    isRestricted: { type: Boolean, default: false },
+    restrictedAt: { type: Date },
+    restrictionEndDate: { type: Date },
+    restrictionDurationDays: { type: Number, default: 0 },
+    restrictionReason: { type: String, default: "" },
+  },
+
+  totalBookedAppointments: { type: Number, default: 0 },
+
+  bookingHistory: [
+    {
+      appointmentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "appointment",
+      },
+      bookedAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 const userModel = mongoose.model.user || mongoose.model("user", userSchema);

@@ -9,6 +9,11 @@ import {
   deleteConversationForAppointment,
   releaseDoctorSlot,
 } from "./appointmentController.js";
+import {
+  applyAdminBookingRestriction,
+  liftAdminBookingRestriction,
+  getBookingRestrictionStatus,
+} from "../services/bookingRestrictionService.js";
 //Api for adding doctor
 const addDoctor = async (req, res) => {
   try {
@@ -285,6 +290,139 @@ const deleteDoctor = async (req, res) => {
   }
 };
 
+const applyBookingRestriction = async (req, res) => {
+  try {
+    const { userId, period, durationDays, reason } = req.body;
+
+    if (!userId) {
+      return res.json({ success: false, message: "userId is required" });
+    }
+
+    const user = await applyAdminBookingRestriction(userId, {
+      period,
+      durationDays,
+      reason,
+    });
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Booking restriction applied",
+      bookingRestriction: user.bookingRestriction,
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const liftBookingRestriction = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.json({ success: false, message: "userId is required" });
+    }
+
+    const user = await liftAdminBookingRestriction(userId);
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, message: "Booking restriction lifted" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const getUserBookingRestriction = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await userModel.findById(userId).select("-password");
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      status: getBookingRestrictionStatus(user),
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const updateUserAccountStatus = async (req, res) => {
+  try {
+    const { userId, accountStatus } = req.body;
+    const allowed = ["green", "warning", "restricted", "blocked"];
+
+    if (!userId || !accountStatus) {
+      return res.json({
+        success: false,
+        message: "userId and accountStatus are required",
+      });
+    }
+
+    if (!allowed.includes(accountStatus)) {
+      return res.json({
+        success: false,
+        message: `accountStatus must be one of: ${allowed.join(", ")}`,
+      });
+    }
+
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { accountStatus },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: `Account status updated to ${accountStatus}`,
+      user: {
+        _id: user._id,
+        accountStatus: user.accountStatus,
+      },
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const allUsers = async (req, res) => {
+  try {
+    const users = await userModel
+      .find({})
+      .select("-password")
+      .sort({ name: 1 });
+
+    const usersWithStatus = users.map((user) => ({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      accountStatus: user.accountStatus,
+      totalCancelledAppointments: user.totalCancelledAppointments || 0,
+      totalBookedAppointments: user.totalBookedAppointments || 0,
+      bookingRestriction: user.bookingRestriction,
+      bookingStatus: getBookingRestrictionStatus(user),
+    }));
+
+    res.json({ success: true, users: usersWithStatus });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -294,4 +432,9 @@ export {
   adminDashboard,
   updateDoctor,
   deleteDoctor,
+  applyBookingRestriction,
+  liftBookingRestriction,
+  getUserBookingRestriction,
+  allUsers,
+  updateUserAccountStatus,
 };

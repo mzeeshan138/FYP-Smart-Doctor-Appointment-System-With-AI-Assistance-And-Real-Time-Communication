@@ -167,6 +167,8 @@ const Login = () => {
         setToken(data.token);
         toast.success("Login successful");
         navigate(redirectTo);
+      } else if (data.accountBanned) {
+        toast.error(data.message, { autoClose: 8000 });
       } else {
         toast.error(data.message);
       }
