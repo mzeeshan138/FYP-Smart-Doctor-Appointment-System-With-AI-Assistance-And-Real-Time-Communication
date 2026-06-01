@@ -2,6 +2,10 @@ import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
+import {
+  deleteConversationForAppointment,
+  releaseDoctorSlot,
+} from "./appointmentController.js";
 const changeAvailabilty = async (req, res) => {
   try {
     const { docId } = req.body;
@@ -102,6 +106,11 @@ const appointmentCancel = async (req, res) => {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
         cancelled: true,
       });
+
+      const { slotDate, slotTime } = appointmentData;
+      await releaseDoctorSlot(docId, slotDate, slotTime);
+      await deleteConversationForAppointment(appointmentId);
+
       return res.json({ success: true, message: "Appointment cancelled" });
     } else {
       return res.json({ success: false, message: "Cancellation failed" });

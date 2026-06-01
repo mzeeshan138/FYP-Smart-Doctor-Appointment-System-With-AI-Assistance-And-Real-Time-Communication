@@ -9,6 +9,10 @@ import appointmentModel from "../models/appointmentModel.js";
  import Conversation from "../models/conversationModel.js";
 import emailVerificationModel from "../models/emailVerificationModel.js";
 import { validateBookingEligibility } from "../services/appointmentBookingService.js";
+import {
+  deleteConversationForAppointment,
+  releaseDoctorSlot,
+} from "../controllers/appointmentController.js";
 // API for register user
 
 const registerUser = async (req, res) => {
@@ -272,17 +276,9 @@ const cancelAppointment = async (req, res) => {
 
     await userData.save();
 
-    // releasing doctor slot
     const { docId, slotDate, slotTime } = appointmentData;
-
-    const doctorData = await doctorModel.findById(docId);
-
-    let slots_booked = doctorData.slots_booked;
-    slots_booked[slotDate] = slots_booked[slotDate].filter(
-      (e) => e !== slotTime
-    );
-
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+    await releaseDoctorSlot(docId, slotDate, slotTime);
+    await deleteConversationForAppointment(appointmentId);
 
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {

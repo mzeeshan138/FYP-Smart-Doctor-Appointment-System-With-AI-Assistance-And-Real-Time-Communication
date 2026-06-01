@@ -5,6 +5,10 @@ import doctorModel from "../models/doctorModel.js";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
+import {
+  deleteConversationForAppointment,
+  releaseDoctorSlot,
+} from "./appointmentController.js";
 //Api for adding doctor
 const addDoctor = async (req, res) => {
   try {
@@ -160,17 +164,9 @@ const appointmentCancel = async (req, res) => {
       cancelled: true,
     });
 
-    // releaseing doctor slot
     const { docId, slotDate, slotTime } = appointmentData;
-
-    const doctorData = await doctorModel.findById(docId);
-
-    let slots_booked = doctorData.slots_booked;
-    slots_booked[slotDate] = slots_booked[slotDate].filter(
-      (e) => e !== slotTime
-    );
-
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+    await releaseDoctorSlot(docId, slotDate, slotTime);
+    await deleteConversationForAppointment(appointmentId);
 
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
