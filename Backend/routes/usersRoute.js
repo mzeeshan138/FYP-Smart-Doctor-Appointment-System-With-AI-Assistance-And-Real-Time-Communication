@@ -8,7 +8,7 @@ import {
   bookAppointment,
   listAppointment,
   cancelAppointment,
-  uploadPaymentProof,
+  validateBookingBeforePayment,
 } from "../controllers/userController.js";
 import {
   sendVerificationCode,
@@ -37,11 +37,11 @@ userRouter.post(
   updateProfile
 );
 userRouter.post("/book-appointment", authUser, bookAppointment);
+userRouter.post("/validate-booking", authUser, validateBookingBeforePayment);
 userRouter.post("/stripe/create-deposit-session", authUser, createDepositSession);
 userRouter.post("/stripe/create-balance-session", authUser, createBalanceSession);
 userRouter.post("/stripe/verify-session", authUser, verifyStripeSession);
 userRouter.get("/appointments", authUser, listAppointment);
-userRouter.post("/appointments/payment/:id",uploadPaymentProof);
 userRouter.post("/cancle-appointment", authUser, cancelAppointment);
 
 export default userRouter;

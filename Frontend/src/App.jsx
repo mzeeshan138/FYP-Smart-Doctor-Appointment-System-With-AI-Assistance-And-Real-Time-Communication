@@ -15,7 +15,6 @@ import { useContext, useEffect } from "react";
 import { AppContext } from "./context/AppContext";
 import axios from "axios";
 import TopLoadingBar from "./components/TopLoadingBar";
-import Payment from "./pages/Payment";
 import Chat from "./pages/Chat";
 
 const App = () => {
@@ -35,7 +34,6 @@ const App = () => {
           <Route path="/contact" element={<Contact />}></Route>
           <Route path="/my-profile" element={<MyProfile />}></Route>
           <Route path="/my-appointments" element={<MyAppointments />}></Route>
-          <Route path="/payment/:id/:appointmentId" element={<Payment />}></Route>
           <Route path="/appointment/:docId" element={<Appointment />}></Route>
           <Route path="/chat" element={<Chat />} />
           <Route path="*" element={<div>Not found</div>} />

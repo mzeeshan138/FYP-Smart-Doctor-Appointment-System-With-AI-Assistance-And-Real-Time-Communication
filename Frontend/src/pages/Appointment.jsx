@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
@@ -11,7 +11,7 @@ const Appointment = () => {
   const { docId } = useParams();
   const { doctors, currencySymbol, token, backendUrl, clearAuth } =
     useContext(AppContext);
-  const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const daysOfWeek = ["SUN", "MON", "TUE", "WEND", "THE", "FRI", "SAT"];
 
   const [docInfo, setDocInfo] = useState(null);
   const [docSlots, setDocSlots] = useState([]);
@@ -114,11 +114,23 @@ const Appointment = () => {
     try {
       const date = docSlots[slotIndex][0].datetime;
       const slotDate = `${date.getDate()}_${date.getMonth() + 1}_${date.getFullYear()}`;
+      const headers = { token };
+
+      const validateRes = await axios.post(
+        backendUrl + "/api/user/validate-booking",
+        { docId, slotDate, slotTime },
+        { headers }
+      );
+
+      if (!validateRes.data.success) {
+        toast.error(validateRes.data.message);
+        return;
+      }
 
       const { data } = await axios.post(
         backendUrl + "/api/user/stripe/create-deposit-session",
         { docId, slotDate, slotTime },
-        { headers: { token } }
+        { headers }
       );
 
       if (data.success && data.url) {
@@ -167,70 +179,80 @@ const Appointment = () => {
 
   return (
     docInfo && (
-      <div className="max-w-2xl mx-auto py-3 px-2 sm:px-4">
-        {/* Doctor card — compact */}
-        <div className="flex gap-3 sm:gap-4 items-start bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
-          <img
-            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg bg-primary shrink-0"
-            src={docInfo.image}
-            alt={docInfo.name}
-          />
+      <div>
+        {/* Doctor details — full width layout */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div>
+            <img
+              className="bg-primary w-full sm:max-w-72 rounded-lg"
+              src={docInfo.image}
+              alt={docInfo.name}
+            />
+          </div>
 
-          <div className="flex-1 min-w-0">
-            <p className="flex items-center gap-1.5 text-base sm:text-lg font-semibold text-gray-900 truncate">
+          <div className="flex-1 border border-gray-400 rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[80px] sm:mt-0">
+            <p className="flex items-center gap-2 text-2xl font-medium text-gray-900">
               {docInfo.name}
-              <img className="w-4 shrink-0" src={assets.verified_icon} alt="" />
+              <img className="w-5" src={assets.verified_icon} alt="" />
             </p>
-            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-              {docInfo.degree} · {docInfo.speciality}
-            </p>
-            <span className="inline-block mt-1 text-[10px] sm:text-xs border px-2 py-0.5 rounded-full text-gray-500">
-              {docInfo.experience}
-            </span>
-            <p className="text-xs text-gray-500 mt-2 line-clamp-2">
-              {docInfo.about}
-            </p>
-            <p className="text-xs sm:text-sm font-medium text-gray-700 mt-2">
-              Fee: {currencySymbol}
-              {docInfo.fees}
-              <span className="text-blue-600 font-normal ml-1">
-                · Deposit {currencySymbol}
-                {depositRs} (10%)
+            <div className="flex items-center gap-2 text-sm mt-1 text-gray-600">
+              <p>
+                {docInfo.degree} - {docInfo.speciality}
+              </p>
+              <button
+                type="button"
+                className="py-0.5 px-2 border text-xs rounded-full"
+              >
+                {docInfo.experience}
+              </button>
+            </div>
+
+            <div>
+              <p className="flex items-center gap-1 text-sm font-medium text-gray-900 mt-3">
+                About <img src={assets.info_icon} alt="" />
+              </p>
+              <p className="text-sm text-gray-500 max-w-[700px] mt-1">
+                {docInfo.about}
+              </p>
+            </div>
+
+            <p className="text-gray-500 font-medium mt-4">
+              Appointment fee:{" "}
+              <span className="text-gray-600">
+                {currencySymbol}
+                {docInfo.fees}
               </span>
             </p>
-            <p className="text-[11px] text-gray-400 mt-1">
-              Charged in USD on Stripe sandbox. Pay remaining 90% later in My
+            <p className="text-sm text-blue-600 mt-2">
+              10% deposit ({currencySymbol}
+              {depositRs}) via Stripe to book. Pay remaining 90% later in My
               Appointments.
             </p>
           </div>
         </div>
 
-        {/* Booking slots — compact */}
-        <div className="mt-4 bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-700 mb-2">Select date</p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {docSlots.map((item, index) => (
-              <button
-                type="button"
-                onClick={() => setSlotIndex(index)}
-                className={`text-center py-2 px-3 min-w-[44px] rounded-lg text-xs shrink-0 transition ${
-                  slotIndex === index
-                    ? "bg-primary text-white"
-                    : "border border-gray-200 text-gray-600 hover:border-primary"
-                }`}
-                key={index}
-              >
-                <p className="font-medium">
-                  {item[0] && daysOfWeek[item[0].datetime.getDay()]}
-                </p>
-                <p>{item[0] && item[0].datetime.getDate()}</p>
-              </button>
-            ))}
+        {/* Booking slots — aligned with doctor image column */}
+        <div className="sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700">
+          <p>Booking slots</p>
+          <div className="flex gap-3 items-center w-full overflow-x-scroll mt-4">
+            {docSlots.length > 0 &&
+              docSlots.map((item, index) => (
+                <button
+                  type="button"
+                  key={index}
+                  onClick={() => setSlotIndex(index)}
+                  className={`text-center py-6 min-w-16 rounded-full cursor-pointer transition ${
+                    slotIndex === index
+                      ? "bg-primary text-white"
+                      : "border border-gray-200"
+                  }`}
+                >
+                  <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
+                  <p>{item[0] && item[0].datetime.getDate()}</p>
+                </button>
+              ))}
           </div>
 
-          <p className="text-sm font-medium text-gray-700 mt-3 mb-1">
-            Select time
-          </p>
           <SlotSelector
             docSlots={docSlots}
             slotIndex={slotIndex}
@@ -238,29 +260,28 @@ const Appointment = () => {
             setSlotTime={setSlotTime}
           />
 
-          <div className="flex flex-wrap items-center gap-2 mt-4">
-            <button
-              type="button"
-              onClick={bookAppointment}
-              disabled={booking}
-              className="bg-primary text-white text-xs sm:text-sm px-5 py-2 rounded-full disabled:opacity-60"
+          <button
+            type="button"
+            onClick={bookAppointment}
+            disabled={booking}
+            className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-5 disabled:opacity-60"
+          >
+            {booking ? "Redirecting to payment..." : "Pay 10% & Book Appointment"}
+          </button>
+
+          {token && (
+            <Link
+              to="/chat"
+              state={{ doctor: docInfo }}
+              className="inline-block ml-4 bg-green-500 text-white text-sm font-light px-10 py-3 rounded-full my-5"
             >
-              {booking ? "Opening Stripe..." : "Pay 10% & Book"}
-            </button>
-            {token && (
-              <Link
-                to="/chat"
-                state={{ doctor: docInfo }}
-                className="text-xs sm:text-sm px-4 py-2 rounded-full border border-green-500 text-green-600 hover:bg-green-50"
-              >
-                Message Doctor
-              </Link>
-            )}
-          </div>
+              Message Doctor
+            </Link>
+          )}
 
           {!token && (
-            <p className="text-xs text-orange-600 mt-2">
-              Login required to book an appointment.
+            <p className="text-sm text-orange-600 mb-4">
+              You must login before booking an appointment.
             </p>
           )}
         </div>

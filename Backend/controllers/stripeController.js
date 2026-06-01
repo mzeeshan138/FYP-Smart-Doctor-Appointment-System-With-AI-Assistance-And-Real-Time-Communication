@@ -4,8 +4,8 @@ import appointmentModel from "../models/appointmentModel.js";
 import {
   calculateDepositAmount,
   calculateBalanceAmount,
-  createAppointmentAfterDeposit,
-  validateSlotForBooking,
+  finalizeAppointmentAfterPayment,
+  validateBookingEligibility,
 } from "../services/appointmentBookingService.js";
 
 const getStripe = () => {
@@ -78,12 +78,7 @@ const processCompletedCheckout = async (session) => {
   if (paymentType === "deposit") {
     const { docId, slotDate, slotTime } = session.metadata;
 
-    const slotCheck = await validateSlotForBooking(docId, slotDate, slotTime);
-    if (!slotCheck.valid) {
-      throw new Error(slotCheck.message || "Slot no longer available");
-    }
-
-    const appointment = await createAppointmentAfterDeposit({
+    const appointment = await finalizeAppointmentAfterPayment({
       userId,
       docId,
       slotDate,
@@ -165,32 +160,20 @@ export const createDepositSession = async (req, res) => {
     const userId = req.body.userId;
     const { docId, slotDate, slotTime } = req.body;
 
-    if (!docId || !slotDate || !slotTime) {
-      return res.json({ success: false, message: "Missing booking details" });
-    }
-
-    const slotCheck = await validateSlotForBooking(docId, slotDate, slotTime);
-    if (!slotCheck.valid) {
-      return res.json({ success: false, message: slotCheck.message });
-    }
-
-    const existingAppointment = await appointmentModel.findOne({
+    // ========== ALL CHECKS BEFORE PAYMENT (same as old bookAppointment) ==========
+    const eligibility = await validateBookingEligibility(
       userId,
-      cancelled: false,
-      isCompleted: false,
-    });
+      docId,
+      slotDate,
+      slotTime
+    );
 
-    if (existingAppointment) {
-      return res.json({
-        success: false,
-        message:
-          "You already have an active appointment. Complete or cancel it before booking a new one.",
-      });
+    if (!eligibility.eligible) {
+      return res.json({ success: false, message: eligibility.message });
     }
 
     const stripe = getStripe();
-    const totalFees = slotCheck.docData.fees;
-    const depositAmount = calculateDepositAmount(totalFees);
+    const depositAmount = eligibility.depositAmount;
     const charge = getStripeCharge(depositAmount);
 
     const session = await stripe.checkout.sessions.create({
@@ -202,7 +185,7 @@ export const createDepositSession = async (req, res) => {
             currency: charge.currency,
             product_data: {
               name: "Appointment deposit (10%)",
-              description: `Deposit for Dr. ${slotCheck.docData.name} — ${slotDate} ${slotTime}`,
+              description: `Deposit for Dr. ${eligibility.docData.name} — ${slotDate} ${slotTime}`,
             },
             unit_amount: charge.stripeAmount,
           },

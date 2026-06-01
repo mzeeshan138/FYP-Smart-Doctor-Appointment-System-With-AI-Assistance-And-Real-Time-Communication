@@ -185,20 +185,6 @@ const getDoctor = async (req, res) => {
   }
 }
 
-const paymentComplete = async(req,res)=>{
-  try {
-    const { id} = req.body;
-    console.log(id);
-    const appointmentData = await appointmentModel.findByIdAndUpdate(id, {
-      payment: true,
-    });
-    res.json({ success: true, message: "Payment completed" });
-  } catch (error) {
-    console.log("error:", error);
-    res.json({ success: false, message: error.message });
-  }
-}
-
 export {
   changeAvailabilty,
   doctorList,
@@ -208,7 +194,6 @@ export {
   appointmentCancel,
   doctorDashboard,
   doctorProfile,
-  paymentComplete,
   updateDoctorProfile,
   getDoctor
 };

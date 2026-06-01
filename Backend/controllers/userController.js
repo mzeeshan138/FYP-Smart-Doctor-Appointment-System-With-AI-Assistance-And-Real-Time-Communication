@@ -8,6 +8,7 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
  import Conversation from "../models/conversationModel.js";
 import emailVerificationModel from "../models/emailVerificationModel.js";
+import { validateBookingEligibility } from "../services/appointmentBookingService.js";
 // API for register user
 
 const registerUser = async (req, res) => {
@@ -154,13 +155,42 @@ const updateProfile = async (req, res) => {
 };
 
 
-//API to book appointment — requires Stripe deposit payment first
+//API to book appointment — use Stripe deposit flow
 const bookAppointment = async (req, res) => {
   return res.json({
     success: false,
     message:
       "Please pay the 10% deposit via Stripe to book an appointment.",
   });
+};
+
+// Validate all booking rules BEFORE opening Stripe checkout (no payment yet)
+const validateBookingBeforePayment = async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    const { docId, slotDate, slotTime } = req.body;
+
+    const eligibility = await validateBookingEligibility(
+      userId,
+      docId,
+      slotDate,
+      slotTime
+    );
+
+    if (!eligibility.eligible) {
+      return res.json({ success: false, message: eligibility.message });
+    }
+
+    res.json({
+      success: true,
+      message: "You can book this appointment",
+      depositAmount: eligibility.depositAmount,
+      totalFees: eligibility.totalFees,
+    });
+  } catch (error) {
+    console.log("validateBookingBeforePayment error:", error);
+    res.json({ success: false, message: error.message });
+  }
 };
 
 //API to get user appointments for backend my-appointments page
@@ -261,33 +291,6 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-// API for upload payment proof (legacy Raast — optional)
-const uploadPaymentProof = async (req, res) => {
-  const { amount,tid,name } = req.body;
-  const { id } = req.params;
-
-  try {
-
-    // Save payment proof in appointment data
-    const appointmentUpdated = await appointmentModel.findByIdAndUpdate(id, {
-      paymentProof: {
-        tid: tid,
-        amount: amount,
-        name: name,
-      }
-      , $new: true });
-  console.log(appointmentUpdated);
-
-  res.json({ success: true, message: "Payment proof uploaded successfully" });
-
-} catch (error) {
-  console.error("Upload Error:", error);
-  res.status(500).json({ success: false, message: "Server error" });
-}
-
-
-}
-
 export {
   registerUser,
   loginUser,
@@ -296,5 +299,5 @@ export {
   bookAppointment,
   listAppointment,
   cancelAppointment,
-  uploadPaymentProof
+  validateBookingBeforePayment,
 };

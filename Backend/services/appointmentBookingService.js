@@ -9,17 +9,18 @@ export const calculateDepositAmount = (totalFees) =>
 export const calculateBalanceAmount = (totalFees, depositAmount) =>
   Math.round((totalFees - depositAmount) * 100) / 100;
 
-export const createAppointmentAfterDeposit = async ({
+/**
+ * All checks from original bookAppointment — run BEFORE payment (Stripe checkout).
+ * No slot is reserved and no appointment is created here.
+ */
+export const validateBookingEligibility = async (
   userId,
   docId,
   slotDate,
-  slotTime,
-  depositAmount,
-}) => {
-  const docData = await doctorModel.findById(docId).select("-password");
-
-  if (!docData) {
-    throw new Error("Doctor not found");
+  slotTime
+) => {
+  if (!userId || !docId || !slotDate || !slotTime) {
+    return { eligible: false, message: "Missing booking details" };
   }
 
   const existingAppointment = await appointmentModel.findOne({
@@ -29,31 +30,33 @@ export const createAppointmentAfterDeposit = async ({
   });
 
   if (existingAppointment) {
-    throw new Error(
-      "You already have an active appointment. Complete or cancel it before booking a new one."
-    );
+    return {
+      eligible: false,
+      message:
+        "You already have an active appointment. Complete or cancel it before booking a new one.",
+    };
+  }
+
+  const docData = await doctorModel.findById(docId).select("-password");
+
+  if (!docData) {
+    return { eligible: false, message: "Doctor not found" };
   }
 
   if (!docData.available) {
-    throw new Error("Doctor is not available");
+    return { eligible: false, message: "Doctor is not available" };
   }
 
-  let slots_booked = docData.slots_booked || {};
+  const slots_booked = docData.slots_booked || {};
 
   if (slots_booked[slotDate]?.includes(slotTime)) {
-    throw new Error("Slot not available");
-  }
-
-  if (slots_booked[slotDate]) {
-    slots_booked[slotDate].push(slotTime);
-  } else {
-    slots_booked[slotDate] = [slotTime];
+    return { eligible: false, message: "Slot not available" };
   }
 
   const userData = await userModel.findById(userId).select("-password");
 
   if (!userData) {
-    throw new Error("User not found");
+    return { eligible: false, message: "User not found" };
   }
 
   const currentYear = new Date().getFullYear();
@@ -68,9 +71,73 @@ export const createAppointmentAfterDeposit = async ({
     yearData.cancelAppointmentCount >=
     Number(process.env.CANCEL_APPOINTMENT_LIMIT)
   ) {
+    return {
+      eligible: false,
+      message:
+        "Your account is restricted due to repeated appointment cancellations",
+    };
+  }
+
+  return {
+    eligible: true,
+    docData,
+    userData,
+    depositAmount: calculateDepositAmount(docData.fees),
+    totalFees: docData.fees,
+  };
+};
+
+/**
+ * After successful Stripe deposit — book slot and create appointment.
+ * Assumes validateBookingEligibility already passed; re-checks slot race only.
+ */
+export const finalizeAppointmentAfterPayment = async ({
+  userId,
+  docId,
+  slotDate,
+  slotTime,
+  depositAmount,
+}) => {
+  const existingAppointment = await appointmentModel.findOne({
+    userId,
+    cancelled: false,
+    isCompleted: false,
+  });
+
+  if (existingAppointment) {
     throw new Error(
-      "Your account is restricted due to repeated appointment cancellations"
+      "You already have an active appointment. Contact support if you were charged."
     );
+  }
+
+  const docData = await doctorModel.findById(docId).select("-password");
+
+  if (!docData) {
+    throw new Error("Doctor not found");
+  }
+
+  if (!docData.available) {
+    throw new Error("Doctor is no longer available");
+  }
+
+  let slots_booked = docData.slots_booked || {};
+
+  if (slots_booked[slotDate]?.includes(slotTime)) {
+    throw new Error(
+      "This slot was just booked. Please contact support regarding your deposit payment."
+    );
+  }
+
+  if (slots_booked[slotDate]) {
+    slots_booked[slotDate].push(slotTime);
+  } else {
+    slots_booked[slotDate] = [slotTime];
+  }
+
+  const userData = await userModel.findById(userId).select("-password");
+
+  if (!userData) {
+    throw new Error("User not found");
   }
 
   const totalFees = docData.fees;
@@ -116,6 +183,7 @@ export const createAppointmentAfterDeposit = async ({
   return newAppointment;
 };
 
+/** @deprecated Use validateBookingEligibility */
 export const validateSlotForBooking = async (docId, slotDate, slotTime) => {
   const docData = await doctorModel.findById(docId).select("-password");
 
@@ -134,3 +202,6 @@ export const validateSlotForBooking = async (docId, slotDate, slotTime) => {
 
   return { valid: true, docData };
 };
+
+/** @deprecated Use finalizeAppointmentAfterPayment */
+export const createAppointmentAfterDeposit = finalizeAppointmentAfterPayment;
