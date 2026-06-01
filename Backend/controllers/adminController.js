@@ -499,6 +499,57 @@ const allUsers = async (req, res) => {
   }
 };
 
+const allPayments = async (req, res) => {
+  try {
+    const payments = await paymentModel.find({}).sort({ createdAt: -1 });
+
+    const userIds = [...new Set(payments.map((p) => p.userId).filter(Boolean))];
+    const docIds = [...new Set(payments.map((p) => p.docId).filter(Boolean))];
+
+    const [users, doctors] = await Promise.all([
+      userModel.find({ _id: { $in: userIds } }).select("name email"),
+      doctorModel.find({ _id: { $in: docIds } }).select("name"),
+    ]);
+
+    const userMap = Object.fromEntries(
+      users.map((u) => [u._id.toString(), u])
+    );
+    const docMap = Object.fromEntries(
+      doctors.map((d) => [d._id.toString(), d])
+    );
+
+    const enrichedPayments = payments.map((payment) => {
+      const user = userMap[payment.userId];
+      const doctor = docMap[payment.docId];
+
+      return {
+        _id: payment._id,
+        userId: payment.userId,
+        appointmentId: payment.appointmentId,
+        docId: payment.docId,
+        stripeSessionId: payment.stripeSessionId,
+        stripePaymentIntentId: payment.stripePaymentIntentId,
+        amount: payment.amount,
+        currency: payment.currency,
+        paymentType: payment.paymentType,
+        status: payment.status,
+        slotDate: payment.slotDate,
+        slotTime: payment.slotTime,
+        paidAt: payment.paidAt,
+        createdAt: payment.createdAt,
+        patientName: user?.name || payment.patientName || "—",
+        patientEmail: user?.email || payment.patientEmail || "—",
+        doctorName: doctor?.name || "—",
+        userDeleted: payment.userDeleted || false,
+      };
+    });
+
+    res.json({ success: true, payments: enrichedPayments });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -514,4 +565,5 @@ export {
   allUsers,
   updateUserAccountStatus,
   deleteUser,
+  allPayments,
 };

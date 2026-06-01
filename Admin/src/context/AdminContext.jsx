@@ -13,6 +13,7 @@ const AdminContextProvider = (props) => {
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [payments, setPayments] = useState([]);
 
   const getAllDoctors = async () => {
     try {
@@ -239,6 +240,22 @@ const deleteDoctor = async (doctorId) => {
     }
   };
 
+  const getAllPayments = async () => {
+    try {
+      const { data } = await axios.get(backendUrl + "/api/admin/all-payments", {
+        headers: { aToken },
+      });
+
+      if (data.success) {
+        setPayments(data.payments);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to load payments");
+    }
+  };
+
   const backendUrl = "http://localhost:4000";
   const value = {
     aToken,
@@ -261,6 +278,8 @@ const deleteDoctor = async (doctorId) => {
     liftBookingRestriction,
     updateUserAccountStatus,
     deletePatient,
+    payments,
+    getAllPayments,
   };
 
 

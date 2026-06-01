@@ -21,6 +21,7 @@ import Chat from './pages/Chat'
 import EditDoctor from "./pages/Admin/EditDoctor";
 import PatientBookingRestrictions from "./pages/Admin/PatientBookingRestrictions";
 import AllPatients from "./pages/Admin/AllPatients";
+import AllPayments from "./pages/Admin/AllPayments";
 const App = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken } = useContext(DoctorContext);
@@ -47,6 +48,7 @@ const App = () => {
               path="/patient-restrictions"
               element={<PatientBookingRestrictions />}
             />
+            <Route path="/all-payments" element={<AllPayments />} />
 
             {/* Doctor Routes */}
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />

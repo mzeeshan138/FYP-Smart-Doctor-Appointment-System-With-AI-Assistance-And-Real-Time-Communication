@@ -4,7 +4,11 @@ import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { DoctorContext } from "../context/DontorContext";
 import { BsChatDotsFill } from "react-icons/bs";
-import { HiOutlineShieldExclamation, HiOutlineUsers } from "react-icons/hi2";
+import {
+  HiOutlineCreditCard,
+  HiOutlineShieldExclamation,
+  HiOutlineUsers,
+} from "react-icons/hi2";
 
 const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
@@ -78,6 +82,17 @@ const Sidebar = () => {
           >
             <HiOutlineShieldExclamation className="text-xl text-gray-600 shrink-0" />
             <p className="hidden md:block">Patient Restrictions</p>
+          </NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+                isActive ? "bg-[#F2F3FF] border-r-4 border-primary" : ""
+              }`
+            }
+            to={"/all-payments"}
+          >
+            <HiOutlineCreditCard className="text-xl text-gray-600 shrink-0" />
+            <p className="hidden md:block">Payments</p>
           </NavLink>
         </ul>
       )}

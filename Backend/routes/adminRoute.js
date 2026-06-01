@@ -15,6 +15,7 @@ import {
   allUsers,
   updateUserAccountStatus,
   deleteUser,
+  allPayments,
 } from "../controllers/adminController.js";
 import upload from "../middlewares/multer.js";
 import authAdmin from "../middlewares/authAdmin.js";
@@ -45,5 +46,6 @@ adminRouter.post(
   updateUserAccountStatus
 );
 adminRouter.post("/delete-user", authAdmin, deleteUser);
+adminRouter.get("/all-payments", authAdmin, allPayments);
 
 export default adminRouter;
