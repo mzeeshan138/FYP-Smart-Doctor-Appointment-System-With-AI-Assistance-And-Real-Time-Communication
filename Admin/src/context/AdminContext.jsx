@@ -200,6 +200,26 @@ const deleteDoctor = async (doctorId) => {
     }
   };
 
+  const deletePatient = async (userId) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/admin/delete-user",
+        { userId },
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllPatients();
+        getDashData();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to delete patient");
+    }
+  };
+
   const liftBookingRestriction = async (userId) => {
     try {
       const { data } = await axios.post(
@@ -240,6 +260,7 @@ const deleteDoctor = async (doctorId) => {
     applyBookingRestriction,
     liftBookingRestriction,
     updateUserAccountStatus,
+    deletePatient,
   };
 
 

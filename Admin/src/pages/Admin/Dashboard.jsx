@@ -8,11 +8,13 @@ const Dashboard = () => {
   const { aToken, getDashData, cancelAppointment, dashData } =
     useContext(AdminContext);
   const { slotDateFormat } = useContext(AppContext);
+
   useEffect(() => {
     if (aToken) {
       getDashData();
     }
   }, [aToken]);
+
   return (
     dashData && (
       <MoveUpOnRender id="admin-dash">
@@ -49,8 +51,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white ">
-            <div className="flex items-center gap-2.5 px-4 py-4 mt-10 rounded-t border">
+          <div className="bg-white mt-10">
+            <div className="flex items-center gap-2.5 px-4 py-4 rounded-t border">
               <img src={assets.list_icon} alt="" />
               <p className="font-semibold">Latest Bookings</p>
             </div>

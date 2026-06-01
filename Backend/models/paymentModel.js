@@ -22,6 +22,10 @@ const paymentSchema = new mongoose.Schema(
     slotDate: { type: String, default: null },
     slotTime: { type: String, default: null },
     paidAt: { type: Date, default: null },
+    /** Set when patient account is deleted — keeps audit trail */
+    patientName: { type: String, default: "" },
+    patientEmail: { type: String, default: "" },
+    userDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

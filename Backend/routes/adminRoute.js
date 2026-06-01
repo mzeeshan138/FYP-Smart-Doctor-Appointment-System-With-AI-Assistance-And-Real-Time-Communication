@@ -14,6 +14,7 @@ import {
   getUserBookingRestriction,
   allUsers,
   updateUserAccountStatus,
+  deleteUser,
 } from "../controllers/adminController.js";
 import upload from "../middlewares/multer.js";
 import authAdmin from "../middlewares/authAdmin.js";
@@ -43,5 +44,6 @@ adminRouter.post(
   authAdmin,
   updateUserAccountStatus
 );
+adminRouter.post("/delete-user", authAdmin, deleteUser);
 
 export default adminRouter;

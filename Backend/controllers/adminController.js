@@ -5,6 +5,10 @@ import doctorModel from "../models/doctorModel.js";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
+import Conversation from "../models/conversationModel.js";
+import Message from "../models/messageModel.js";
+import paymentModel from "../models/paymentModel.js";
+import emailVerificationModel from "../models/emailVerificationModel.js";
 import {
   deleteConversationForAppointment,
   releaseDoctorSlot,
@@ -398,6 +402,77 @@ const updateUserAccountStatus = async (req, res) => {
   }
 };
 
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.json({ success: false, message: "userId is required" });
+    }
+
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const userIdStr = userId.toString();
+    const appointments = await appointmentModel.find({ userId: userIdStr });
+
+    for (const appointment of appointments) {
+      if (!appointment.cancelled) {
+        await releaseDoctorSlot(
+          appointment.docId,
+          appointment.slotDate,
+          appointment.slotTime
+        );
+      }
+      await deleteConversationForAppointment(appointment._id);
+    }
+
+    await appointmentModel.deleteMany({ userId: userIdStr });
+
+    const conversations = await Conversation.find({ userId: userIdStr });
+    for (const conversation of conversations) {
+      await Message.deleteMany({ conversationId: conversation._id });
+    }
+    await Conversation.deleteMany({ userId: userIdStr });
+
+    // Keep payment records for audit; snapshot patient info
+    await paymentModel.updateMany(
+      { userId: userIdStr },
+      {
+        $set: {
+          patientName: user.name,
+          patientEmail: user.email,
+          userDeleted: true,
+        },
+      }
+    );
+
+    await emailVerificationModel.deleteOne({ email: user.email });
+
+    if (user.image?.includes("cloudinary")) {
+      try {
+        const publicId = user.image.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`DoctorHub/users/${publicId}`);
+      } catch (err) {
+        console.log("cloudinary user image delete:", err.message);
+      }
+    }
+
+    await userModel.findByIdAndDelete(userId);
+
+    res.json({
+      success: true,
+      message:
+        "Patient deleted. Appointments, chats, and messages removed. Payment records kept.",
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
 const allUsers = async (req, res) => {
   try {
     const users = await userModel
@@ -409,6 +484,7 @@ const allUsers = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       image: user.image,
       accountStatus: user.accountStatus,
       totalCancelledAppointments: user.totalCancelledAppointments || 0,
@@ -437,4 +513,5 @@ export {
   getUserBookingRestriction,
   allUsers,
   updateUserAccountStatus,
+  deleteUser,
 };
