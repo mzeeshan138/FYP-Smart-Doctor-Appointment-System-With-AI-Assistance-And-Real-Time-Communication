@@ -1,6 +1,7 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { AdminContext } from "../../context/AdminContext";
 import MoveUpOnRender from "../../components/MoveUpOnRender";
+import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 
 const ACCOUNT_STATUSES = [
   { value: "green", label: "Green" },
@@ -45,12 +46,24 @@ const PatientBookingRestrictions = () => {
   const [customDays, setCustomDays] = useState("");
   const [reason, setReason] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (aToken) {
       getAllPatients();
     }
   }, [aToken]);
+
+  const filteredPatients = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return patients;
+
+    return patients.filter(
+      (user) =>
+        user.name?.toLowerCase().includes(q) ||
+        user.email?.toLowerCase().includes(q)
+    );
+  }, [patients, search]);
 
   const openApplyModal = (user) => {
     setSelectedUser(user);
@@ -88,9 +101,25 @@ const PatientBookingRestrictions = () => {
   return (
     <div className="w-full max-w-7xl m-5">
       <MoveUpOnRender id="admin-patient-restrictions">
-        <p className="mb-4 text-lg font-medium">Patient Booking Restrictions</p>
-
         <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-scroll overflow-x-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-4 border-b sticky top-0 bg-white z-10 min-w-[900px]">
+            <div>
+              <p className="text-lg font-medium">Patient Booking Restrictions</p>
+              <span className="text-xs text-gray-400">
+                {filteredPatients.length} patient(s)
+              </span>
+            </div>
+            <div className="relative w-full sm:max-w-sm">
+              <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or email..."
+                className="w-full pl-9 pr-3 py-2 text-sm border rounded focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
           <div className="hidden lg:grid grid-cols-[1.8fr_1.8fr_0.8fr_2.2fr_0.6fr_1.2fr_1.4fr] items-center py-3 px-4 border-b font-medium text-gray-700 min-w-[900px]">
             <p>Patient</p>
             <p>Email</p>
@@ -101,7 +130,7 @@ const PatientBookingRestrictions = () => {
             <p>Booking ban</p>
           </div>
 
-          {patients.map((user) => {
+          {filteredPatients.map((user) => {
             const adminBan = user.bookingRestriction?.isRestricted;
             const banEnd = user.bookingRestriction?.restrictionEndDate;
             const currentStatus = user.accountStatus || "green";
@@ -185,8 +214,12 @@ const PatientBookingRestrictions = () => {
             );
           })}
 
-          {patients.length === 0 && (
-            <p className="p-8 text-center text-gray-400">No patients found</p>
+          {filteredPatients.length === 0 && (
+            <p className="p-8 text-center text-gray-400">
+              {search.trim()
+                ? "No patients match your search"
+                : "No patients found"}
+            </p>
           )}
         </div>
       </MoveUpOnRender>
