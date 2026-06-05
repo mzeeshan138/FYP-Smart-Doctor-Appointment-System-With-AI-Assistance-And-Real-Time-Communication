@@ -39,7 +39,12 @@ const ConversationList = ({
   };
 
   return (
-    <div className="w-80 border-r bg-white overflow-y-auto">
+    <div className="w-80 border-r bg-white overflow-y-auto shrink-0">
+      {conversations.length === 0 && (
+        <p className="p-6 text-sm text-gray-400 text-center">
+          No conversations yet. Chats appear when patients book an appointment.
+        </p>
+      )}
       {conversations.map((c) => {
 
         const friend =

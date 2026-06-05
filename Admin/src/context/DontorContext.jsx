@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useState } from "react";
+import { createContext, useCallback, useState } from "react";
 import { toast } from "react-toastify";
 
 export const DoctorContext = createContext();
@@ -11,7 +11,7 @@ const DoctorContextProvider = (props) => {
   );
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState([]);
-  const [profileData, setProfileData] = useState(false);
+  const [profileData, setProfileData] = useState(null);
 
   const getAppointments = async () => {
     try {
@@ -89,22 +89,23 @@ const DoctorContextProvider = (props) => {
     }
   };
 
-  const getProfileData = async () => {
+  const getProfileData = useCallback(async () => {
+    if (!dToken) return;
+
     try {
       const { data } = await axios.get(backendUrl + "/api/doctor/profile", {
         headers: { dToken },
       });
       if (data.success) {
         setProfileData(data.profileData);
-        console.log("data:", data);
       } else {
         toast.error(data.message);
       }
     } catch (error) {
       console.log("error:", error);
-      toast.error(error);
+      toast.error(error.message || "Failed to load profile");
     }
-  };
+  }, [dToken, backendUrl]);
 
   const value = {
     dToken,

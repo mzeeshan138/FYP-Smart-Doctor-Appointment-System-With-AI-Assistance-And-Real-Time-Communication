@@ -2,29 +2,29 @@ import { useContext, useEffect } from "react";
 import { DoctorContext } from "../context/DontorContext";
 import ChatLayout from "../components/chat/ChatLayout";
 
-
 const Chat = () => {
   const { profileData, dToken, getProfileData } = useContext(DoctorContext);
 
   useEffect(() => {
-    if (dToken && !profileData) {
+    if (dToken) {
       getProfileData();
     }
-  }, [dToken,profileData,getProfileData]);
-
-  // console.log("doc", profileData);
+  }, [dToken, getProfileData]);
 
   if (!dToken) {
-    return <div>Please login first.</div>;
+    return (
+      <div className="p-8 text-gray-500">Please login as a doctor to use chat.</div>
+    );
   }
 
-  // // ⛔ WAIT until profile loads
-  // if (!profileData) {
-  //   return <div>Loading...</div>;
-  // }
+  if (!profileData) {
+    return (
+      <div className="p-8 text-gray-500">Loading chat...</div>
+    );
+  }
 
   return (
-    <div className="bg-gray-100">
+    <div className="w-full h-[calc(100vh-64px)] bg-gray-100 overflow-hidden">
       <ChatLayout currentUser={profileData} />
     </div>
   );

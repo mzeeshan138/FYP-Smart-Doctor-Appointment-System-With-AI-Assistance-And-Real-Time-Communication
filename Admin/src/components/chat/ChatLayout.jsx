@@ -60,7 +60,7 @@ const ChatLayout = ({ currentUser }) => {
     };
 
     fetchConversations();
-  }, [currentUser,backendUrl]);
+  }, [currentUser, backendUrl, dToken]);
 
   /* ================= FETCH MESSAGES ================= */
   useEffect(() => {
@@ -82,10 +82,10 @@ const ChatLayout = ({ currentUser }) => {
     };
 
     fetchMessages();
-  }, [currentChat]);
+  }, [currentChat, backendUrl, dToken]);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-full w-full">
       <SidebarIcons />
 
       <ConversationList
@@ -98,17 +98,19 @@ const ChatLayout = ({ currentUser }) => {
         dToken={ dToken }
       />
 
-      <ChatBox
-        currentChat={currentChat}
-        currentUser={currentUser}
-        messages={messages}
-        setMessages={setMessages}
-        socket={socket}
-        onlineUsers={onlineUsers}
-        setConversations={setConversations}
-        dToken={dToken}
-        backendUrl={backendUrl}
-      />
+      <div className="flex-1 min-w-0 flex flex-col">
+        <ChatBox
+          currentChat={currentChat}
+          currentUser={currentUser}
+          messages={messages}
+          setMessages={setMessages}
+          socket={socket}
+          onlineUsers={onlineUsers}
+          setConversations={setConversations}
+          dToken={dToken}
+          backendUrl={backendUrl}
+        />
+      </div>
     </div>
   );
 };

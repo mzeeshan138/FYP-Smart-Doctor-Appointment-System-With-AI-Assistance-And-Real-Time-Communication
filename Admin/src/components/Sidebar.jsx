@@ -15,7 +15,7 @@ const Sidebar = () => {
   const { dToken } = useContext(DoctorContext);
   return (
     <div className="min-h-screen bg-white border-r">
-      {aToken && (
+      {aToken && !dToken && (
         <ul className="text-[#515151] mt-5">
           <NavLink
             className={({ isActive }) =>
@@ -96,7 +96,7 @@ const Sidebar = () => {
           </NavLink>
         </ul>
       )}
-      {dToken && (
+      {dToken && !aToken && (
         <ul className="text-[#515151] mt-5">
           <NavLink
             className={({ isActive }) =>
