@@ -1,7 +1,6 @@
 import express from "express";
 
-import  authUser from "../middlewares/authUser.js";
-import  authDoctor  from "../middlewares/authDoctor.js";
+import authAny from "../middlewares/authAny.js";
 
 import {
   getConversations,
@@ -14,24 +13,13 @@ import {
 
 const router = express.Router();
 
-/* ================= USER CHAT ================= */
-// Get all conversations
-router.get("/list", authUser, getConversations);
-
-// delete conversations
-router.delete("/conversation/:conversationId", authUser, deleteConversation);
-
-// Get messages of a conversation
-router.get("/messages/:conversationId", authUser, getMessages);
-
-// Send message
-router.post("/send", authUser, sendMessage);
-
-// Delete own message
-router.delete("/message/:messageId", authUser, deleteMessage);
-
-// Clear chat
-router.delete("/clear/:conversationId", authUser, clearConversation);
+/* ================= CHAT (user + doctor) ================= */
+router.get("/list", authAny, getConversations);
+router.delete("/conversation/:conversationId", authAny, deleteConversation);
+router.get("/messages/:conversationId", authAny, getMessages);
+router.post("/send", authAny, sendMessage);
+router.delete("/message/:messageId", authAny, deleteMessage);
+router.delete("/clear/:conversationId", authAny, clearConversation);
 
 
 export default router;

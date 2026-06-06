@@ -6,7 +6,9 @@ import { Server } from "socket.io";
 import connectDB from "./config/mongodb.js";
 import connectCloudinary from "./config/cloudnary.js";
 import adminRouter from "./routes/adminRoute.js";
-import aiChatRouter from "./routes/aiChatRoutes.js";
+// Old AI chat (FastAPI) — uncomment to use sklearn chatbot instead of Gemini
+// import aiChatRouter from "./routes/aiChatRoutes.js";
+import geminiChatRouter from "./routes/geminiChatRoutes.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import userRouter from "./routes/usersRoute.js";
 import chatRouter from "./routes/chatRoutes.js"; 
@@ -61,7 +63,8 @@ app.use(cors({
 app.use("/api/admin", adminRouter);
 app.use("/api/doctor", doctorRouter);
 app.use("/api/user", userRouter);
-app.use("/api/ai", aiChatRouter);
+// app.use("/api/ai", aiChatRouter); // old FastAPI chatbot
+app.use("/api/gemini-ai", geminiChatRouter);
 app.use("/api/chat", chatRouter); 
 
 

@@ -1,3 +1,4 @@
+// Old AI chat (FastAPI) — enable in Home.jsx to use this instead of Gemini
 import { useState } from "react";
 import AIChatWindow from "./AIChatWindow";
 

@@ -43,9 +43,9 @@ export const deleteConversation = async (req, res) => {
     const { conversationId } = req.params;
     const userId = req.body.userId;
     const userModel = req.body.userModel;
-    console.log("userId:", userId);
-    console.log("userId:", conversationId);
-    console.log("userModel:", userModel);
+    // console.log("userId:", userId);
+    // console.log("userId:", conversationId);
+    // console.log("userModel:", userModel);
 
     const conversation = await Conversation.findById(conversationId);
 
@@ -94,7 +94,7 @@ export const getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.body.userId;
-    const userModel = req.query.userModel; // "User" or "Doctor"
+    const userModel = req.body.userModel || req.query.userModel;
 
 
 
