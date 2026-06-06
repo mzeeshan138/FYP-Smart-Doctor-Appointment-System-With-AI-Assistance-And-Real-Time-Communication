@@ -1,6 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import doctorModel from "../models/doctorModel.js";
 
+const SPECIALITY_NAMES = [
+  "General physician",
+  "Gynecologist",
+  "Dermatologist",
+  "Pediatricians",
+  "Neurologist",
+  "Gastroenterologist",
+];
+
 const buildDoctorContext = (doctors) =>
   doctors
     .map(
@@ -78,10 +87,14 @@ const geminiChatHandler = async (req, res) => {
       .select("-password -email");
 
     const doctorContext = buildDoctorContext(doctors);
+    const specialityList = SPECIALITY_NAMES.map((s) => `- ${s}`).join("\n");
 
     const prompt = `You are a helpful medical triage assistant for DoctorHub — an online doctor appointment platform.
 
 The user may describe symptoms, health problems, or ask for help in natural language. Analyze their message and respond ONLY with valid JSON (no markdown, no extra text).
+
+Available specialities (categories) — you MUST pick exactly ONE of these names for recommended_speciality. Do not invent other specialities:
+${specialityList}
 
 Available doctors in our system:
 ${doctorContext || "No doctors currently available."}
@@ -90,7 +103,7 @@ Your tasks:
 1. Understand what the user said (symptoms, concerns, or questions).
 2. Identify detected_symptoms from their message.
 3. Suggest a possible_condition (not a definitive diagnosis — use phrases like "possible" or "may indicate").
-4. Decide recommended_speciality: the ONE best speciality for this case (e.g. "Neurologist", "General physician", "Dermatologist"). Use exact speciality names from the doctor list above.
+4. Decide recommended_speciality: the ONE best category from the specialities list above. Copy the name exactly as written.
 5. Write assistant_message: a warm 3-5 sentence reply that:
    - Acknowledges what they told you ("You mentioned...")
    - Summarizes the possible condition in plain language
