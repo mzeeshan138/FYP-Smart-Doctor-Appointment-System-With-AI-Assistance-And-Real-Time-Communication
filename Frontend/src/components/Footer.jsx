@@ -45,7 +45,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-4 text-center">
           <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition">
             <p className="font-semibold text-gray-800">
-              Muhammad Zeeshan
+              Muhammad Zeeshan ( Leader )
             </p>
             <p className="text-sm text-gray-600">2K22-BSSE-106</p>
           </div>

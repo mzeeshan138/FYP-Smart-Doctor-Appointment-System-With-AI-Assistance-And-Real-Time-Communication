@@ -350,7 +350,15 @@ const Login = () => {
               />
             </div>
             <div className="w-full">
-              <p>Password</p>
+              <div className="flex items-center justify-between">
+                <p>Password</p>
+                <span
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-primary underline cursor-pointer text-xs"
+                >
+                  Forgot password?
+                </span>
+              </div>
               <input
                 className="border border-zinc-300 rounded w-full p-2 mt-1"
                 type="password"

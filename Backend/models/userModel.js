@@ -78,6 +78,10 @@ const userSchema = mongoose.Schema({
       bookedAt: { type: Date, default: Date.now },
     },
   ],
+
+  // ================= PASSWORD RESET COOLDOWN =================
+  lastPasswordResetAt: { type: Date, default: null },
+  passwordResetLimitUntil: { type: Date, default: null },
 });
 
 const userModel = mongoose.model.user || mongoose.model("user", userSchema);

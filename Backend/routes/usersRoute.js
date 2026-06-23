@@ -15,6 +15,11 @@ import {
   verifyEmailCode,
 } from "../controllers/emailVerificationController.js";
 import {
+  requestPasswordReset,
+  validateResetToken,
+  resetPassword,
+} from "../controllers/passwordResetController.js";
+import {
   createDepositSession,
   createBalanceSession,
   verifyStripeSession,
@@ -29,6 +34,9 @@ userRouter.post("/send-verification-code", sendVerificationCode);
 userRouter.post("/verify-email-code", verifyEmailCode);
 userRouter.post("/register", requireVerifiedEmail, registerUser);
 userRouter.post("/login", loginUser);
+userRouter.post("/forgot-password", requestPasswordReset);
+userRouter.get("/validate-reset-token", validateResetToken);
+userRouter.post("/reset-password", resetPassword);
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(
   "/update-profile",
