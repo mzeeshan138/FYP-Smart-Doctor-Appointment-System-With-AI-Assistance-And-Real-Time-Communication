@@ -41,6 +41,7 @@ export default function GeminiChatWindow({ onClose }) {
       }
 
       const {
+        has_valid_symptoms,
         detected_symptoms,
         predicted_disease,
         assistant_message,
@@ -52,6 +53,10 @@ export default function GeminiChatWindow({ onClose }) {
           ...prev,
           { sender: "bot", type: "assistant", text: assistant_message },
         ]);
+      }
+
+      if (has_valid_symptoms === false) {
+        return;
       }
 
       setMessages((prev) => [

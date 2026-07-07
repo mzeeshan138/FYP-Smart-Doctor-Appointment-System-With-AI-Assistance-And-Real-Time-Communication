@@ -18,6 +18,29 @@ const buildDoctorContext = (doctors) =>
     )
     .join("\n");
 
+const NON_SYMPTOM_PATTERNS = [
+  /^(hi+|hello+|hey+|hola+|yo+|sup+|good\s+(morning|afternoon|evening|night))[\s!.?]*$/i,
+  /^(thanks|thank\s+you|ok|okay|bye|goodbye)[\s!.?]*$/i,
+  /\b(no\s+(symptoms?|issues?|problems?|pain|concerns?)|nothing\s+wrong|i\s?(?:'m| am)\s+fine|i\s+have\s+no\s+(symptoms?|issues?|problems?))\b/i,
+  /\b(just\s+saying\s+hi|only\s+saying\s+hi|how\s+are\s+you)\b/i,
+];
+
+const isNonSymptomMessage = (message) => {
+  const trimmed = message.trim();
+  if (!trimmed) return true;
+  return NON_SYMPTOM_PATTERNS.some((pattern) => pattern.test(trimmed));
+};
+
+const buildNoSymptomsResponse = () => ({
+  success: true,
+  has_valid_symptoms: false,
+  detected_symptoms: [],
+  predicted_disease: "",
+  assistant_message:
+    "Hello! I'm here to help with health concerns. Please describe your actual symptoms — for example: fever, headache, cough, stomach pain, rash, or fatigue — so I can suggest a possible condition and recommend a doctor.",
+  doctors: [],
+});
+
 const parseGeminiJson = (text) => {
   const cleaned = text
     .replace(/```json/gi, "")
@@ -74,6 +97,10 @@ const geminiChatHandler = async (req, res) => {
         .json({ success: false, message: "Message is required" });
     }
 
+    if (isNonSymptomMessage(message)) {
+      return res.status(200).json(buildNoSymptomsResponse());
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({
@@ -93,34 +120,50 @@ const geminiChatHandler = async (req, res) => {
 
 The user may describe symptoms, health problems, or ask for help in natural language. Analyze their message and respond ONLY with valid JSON (no markdown, no extra text).
 
-Available specialities (categories) — you MUST pick exactly ONE of these names for recommended_speciality. Do not invent other specialities:
+IMPORTANT — detect messages with NO valid symptoms:
+Set has_valid_symptoms to false when the message is ANY of these:
+- Only a greeting or small talk (e.g. "hi", "hello", "hey", "good morning", "how are you")
+- Says they have no symptoms, no issue, or nothing wrong (e.g. "I'm fine", "no problem", "no symptoms")
+- Does not describe any actual health symptom, pain, or medical concern
+- Unrelated chit-chat with no health information
+
+When has_valid_symptoms is false:
+- detected_symptoms must be []
+- possible_condition must be ""
+- recommended_speciality must be ""
+- recommended_doctor_ids must be []
+- assistant_message must politely ask the user to enter valid symptoms (e.g. fever, headache, cough, stomach pain, rash, fatigue). Do NOT guess a condition or recommend a doctor.
+
+Only set has_valid_symptoms to true when the user clearly describes at least one concrete health symptom or medical concern.
+
+Available specialities (categories) — pick exactly ONE only when has_valid_symptoms is true. Copy the name exactly as written:
 ${specialityList}
 
 Available doctors in our system:
 ${doctorContext || "No doctors currently available."}
 
-Your tasks:
-1. Understand what the user said (symptoms, concerns, or questions).
-2. Identify detected_symptoms from their message.
-3. Suggest a possible_condition (not a definitive diagnosis — use phrases like "possible" or "may indicate").
-4. Decide recommended_speciality: the ONE best category from the specialities list above. Copy the name exactly as written.
-5. Write assistant_message: a warm 3-5 sentence reply that:
+When has_valid_symptoms is true, your tasks:
+1. Identify detected_symptoms from their message.
+2. Suggest a possible_condition (not a definitive diagnosis — use phrases like "possible" or "may indicate").
+3. Decide recommended_speciality: the ONE best category from the specialities list above.
+4. Write assistant_message: a warm 3-5 sentence reply that:
    - Acknowledges what they told you ("You mentioned...")
    - Summarizes the possible condition in plain language
    - Gives practical guidance (rest, hydration, when to see a doctor, etc.)
    - If recommending a doctor, mention they can book that doctor below
    - If no doctor is available for that speciality, clearly say no matching doctor is available right now
    - Never claim to be a doctor or give a final diagnosis
-6. Pick recommended_doctor_ids: return ONLY 0 or 1 doctor id.
+5. Pick recommended_doctor_ids: return ONLY 0 or 1 doctor id.
    - Choose the single best doctor from the list whose speciality exactly matches recommended_speciality.
-   - Never mix specialities. Never return a General physician and a Neurologist together.
-   - If no doctor with that speciality exists in the list, return [] — do NOT suggest doctors from other specialities.
+   - Never mix specialities.
+   - If no doctor with that speciality exists in the list, return [].
 
 User message:
 "${message.replace(/"/g, '\\"')}"
 
 Respond with this exact JSON shape:
 {
+  "has_valid_symptoms": true,
   "detected_symptoms": ["symptom1", "symptom2"],
   "possible_condition": "Possible condition name",
   "recommended_speciality": "Neurologist",
@@ -137,6 +180,7 @@ Respond with this exact JSON shape:
     const rawText = result.response.text();
     const parsed = parseGeminiJson(rawText);
 
+    const hasValidSymptoms = parsed.has_valid_symptoms !== false;
     const detected_symptoms = Array.isArray(parsed.detected_symptoms)
       ? parsed.detected_symptoms
       : [];
@@ -146,10 +190,24 @@ Respond with this exact JSON shape:
       parsed.assistant_message ||
       "Thank you for sharing. Please consult a doctor for a proper evaluation.";
 
+    if (!hasValidSymptoms || detected_symptoms.length === 0) {
+      return res.status(200).json({
+        success: true,
+        has_valid_symptoms: false,
+        detected_symptoms: [],
+        predicted_disease: "",
+        assistant_message:
+          assistant_message ||
+          buildNoSymptomsResponse().assistant_message,
+        doctors: [],
+      });
+    }
+
     const matchedDoctors = resolveMatchedDoctors(doctors, parsed);
 
     res.status(200).json({
       success: true,
+      has_valid_symptoms: true,
       detected_symptoms,
       predicted_disease,
       assistant_message,
