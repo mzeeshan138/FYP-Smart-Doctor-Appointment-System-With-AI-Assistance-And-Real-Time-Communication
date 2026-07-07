@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -11,6 +11,7 @@ const MyAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const verifiedSessionIds = useRef(new Set());
 
   const months = [
     "",
@@ -59,7 +60,9 @@ const MyAppointments = () => {
       );
 
       if (data.success) {
-        toast.success(data.message);
+        if (!data.alreadyProcessed) {
+          toast.success(data.message);
+        }
         getUserAppointments();
         getDoctorsData();
       } else {
@@ -94,6 +97,10 @@ const MyAppointments = () => {
     const cancelled = searchParams.get("payment");
 
     if (sessionId && token) {
+      if (verifiedSessionIds.current.has(sessionId)) {
+        return;
+      }
+      verifiedSessionIds.current.add(sessionId);
       verifyStripeReturn(sessionId);
     } else if (cancelled === "cancelled") {
       toast.warn("Payment was cancelled");

@@ -49,20 +49,99 @@ const getStripeCharge = (amountInRs) => {
 const frontendUrl = () =>
   process.env.FRONTEND_URL || "http://localhost:3000";
 
-const processCompletedCheckout = async (session) => {
-  const existingPayment = await paymentModel.findOne({
-    stripeSessionId: session.id,
+const waitForCompletedPayment = async (stripeSessionId, maxWaitMs = 15000) => {
+  const intervalMs = 300;
+  const attempts = Math.ceil(maxWaitMs / intervalMs);
+
+  for (let i = 0; i < attempts; i++) {
+    const payment = await paymentModel.findOne({
+      stripeSessionId,
+      status: "completed",
+    });
+
+    if (payment) {
+      return payment;
+    }
+
+    const current = await paymentModel.findOne({ stripeSessionId });
+
+    if (!current) {
+      throw new Error("Payment record not found for session");
+    }
+
+    if (current.status === "failed") {
+      throw new Error("Payment processing failed");
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error("Payment is still being processed. Please refresh shortly.");
+};
+
+/** Atomically claim a pending payment so webhook + verify-session cannot both book. */
+const claimPaymentForProcessing = async (stripeSessionId) => {
+  const completedPayment = await paymentModel.findOne({
+    stripeSessionId,
     status: "completed",
   });
 
-  if (existingPayment) {
-    return { alreadyProcessed: true, payment: existingPayment };
+  if (completedPayment) {
+    return { claimed: false, alreadyProcessed: true, payment: completedPayment };
   }
 
+  const claimedPayment = await paymentModel.findOneAndUpdate(
+    { stripeSessionId, status: "pending" },
+    { $set: { status: "processing" } },
+    { new: true }
+  );
+
+  if (claimedPayment) {
+    return { claimed: true, payment: claimedPayment };
+  }
+
+  const existingPayment = await paymentModel.findOne({ stripeSessionId });
+
+  if (!existingPayment) {
+    throw new Error("Payment record not found for session");
+  }
+
+  if (existingPayment.status === "completed") {
+    return {
+      claimed: false,
+      alreadyProcessed: true,
+      payment: existingPayment,
+    };
+  }
+
+  if (existingPayment.status === "processing") {
+    const payment = await waitForCompletedPayment(stripeSessionId);
+    return { claimed: false, alreadyProcessed: true, payment };
+  }
+
+  throw new Error("Payment cannot be processed in its current state");
+};
+
+const releasePaymentClaim = async (stripeSessionId) => {
+  await paymentModel.findOneAndUpdate(
+    { stripeSessionId, status: "processing" },
+    { $set: { status: "pending" } }
+  );
+};
+
+const processCompletedCheckout = async (session) => {
+  const claim = await claimPaymentForProcessing(session.id);
+
+  if (!claim.claimed) {
+    return { alreadyProcessed: true, payment: claim.payment };
+  }
+
+  const paymentRecord = claim.payment;
   const paymentType = session.metadata?.paymentType;
   const userId = session.metadata?.userId;
 
   if (!paymentType || !userId) {
+    await releasePaymentClaim(session.id);
     throw new Error("Invalid session metadata");
   }
 
@@ -71,88 +150,57 @@ const processCompletedCheckout = async (session) => {
     : fromStripeAmount(session.amount_total);
   const currency = session.currency;
 
-  let paymentRecord = await paymentModel.findOne({
-    stripeSessionId: session.id,
-  });
+  try {
+    if (paymentType === "deposit") {
+      const { docId, slotDate, slotTime } = session.metadata;
 
-  if (paymentType === "deposit") {
-    const { docId, slotDate, slotTime } = session.metadata;
-
-    const appointment = await finalizeAppointmentAfterPayment({
-      userId,
-      docId,
-      slotDate,
-      slotTime,
-      depositAmount: amount,
-    });
-
-    if (!paymentRecord) {
-      paymentRecord = await paymentModel.create({
+      const appointment = await finalizeAppointmentAfterPayment({
         userId,
         docId,
-        appointmentId: appointment._id.toString(),
-        stripeSessionId: session.id,
-        stripePaymentIntentId: session.payment_intent,
-        amount,
-        currency,
-        paymentType: "deposit",
-        status: "completed",
         slotDate,
         slotTime,
-        paidAt: new Date(),
+        depositAmount: amount,
       });
-    } else {
+
       paymentRecord.status = "completed";
       paymentRecord.stripePaymentIntentId = session.payment_intent;
       paymentRecord.paidAt = new Date();
       paymentRecord.appointmentId = appointment._id.toString();
       await paymentRecord.save();
+
+      return { paymentType, appointment };
     }
 
-    return { paymentType, appointment };
-  }
+    if (paymentType === "balance") {
+      const { appointmentId } = session.metadata;
+      const appointment = await appointmentModel.findById(appointmentId);
 
-  if (paymentType === "balance") {
-    const { appointmentId } = session.metadata;
-    const appointment = await appointmentModel.findById(appointmentId);
+      if (!appointment) {
+        throw new Error("Appointment not found");
+      }
 
-    if (!appointment) {
-      throw new Error("Appointment not found");
-    }
+      if (appointment.userId !== userId) {
+        throw new Error("Unauthorized payment");
+      }
 
-    if (appointment.userId !== userId) {
-      throw new Error("Unauthorized payment");
-    }
+      appointment.balancePaid = true;
+      appointment.payment = true;
+      await appointment.save();
 
-    appointment.balancePaid = true;
-    appointment.payment = true;
-    await appointment.save();
-
-    if (!paymentRecord) {
-      paymentRecord = await paymentModel.create({
-        userId,
-        docId: session.metadata.docId,
-        appointmentId,
-        stripeSessionId: session.id,
-        stripePaymentIntentId: session.payment_intent,
-        amount,
-        currency,
-        paymentType: "balance",
-        status: "completed",
-        paidAt: new Date(),
-      });
-    } else {
       paymentRecord.status = "completed";
       paymentRecord.stripePaymentIntentId = session.payment_intent;
       paymentRecord.paidAt = new Date();
       paymentRecord.appointmentId = appointmentId;
       await paymentRecord.save();
+
+      return { paymentType, appointment };
     }
 
-    return { paymentType, appointment };
+    throw new Error("Unknown payment type");
+  } catch (error) {
+    await releasePaymentClaim(session.id);
+    throw error;
   }
-
-  throw new Error("Unknown payment type");
 };
 
 export const createDepositSession = async (req, res) => {

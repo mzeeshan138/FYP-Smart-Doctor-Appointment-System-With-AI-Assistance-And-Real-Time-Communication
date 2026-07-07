@@ -15,7 +15,7 @@ export default function DoctorCard({ doctor }) {
         <h4 className="font-semibold">{doctor.name}</h4>
         <p className="text-sm text-gray-500">{doctor.speciality}</p>
         <p className="text-sm">Experience: {doctor.experience}</p>
-        <p className="text-sm text-gray-600">Fees: ${doctor.fees}</p>
+        <p className="text-sm text-gray-600">Fees: Rs. {doctor.fees}</p>
       </div>
       <button
         onClick={() => navigate(`/appointment/${doctor._id}`)}

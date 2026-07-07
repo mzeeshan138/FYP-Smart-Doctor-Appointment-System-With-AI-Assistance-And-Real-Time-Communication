@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
@@ -21,6 +21,7 @@ const Appointment = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [booking, setBooking] = useState(false);
+  const bookingInProgress = useRef(false);
 
   const redirectToLogin = () => {
     toast.warn("Please login to book an appointment");
@@ -110,6 +111,11 @@ const Appointment = () => {
       return;
     }
 
+    if (bookingInProgress.current) {
+      return;
+    }
+
+    bookingInProgress.current = true;
     setBooking(true);
     try {
       const date = docSlots[slotIndex][0].datetime;
@@ -169,6 +175,7 @@ const Appointment = () => {
 
       toast.error(message);
     } finally {
+      bookingInProgress.current = false;
       setBooking(false);
     }
   };
