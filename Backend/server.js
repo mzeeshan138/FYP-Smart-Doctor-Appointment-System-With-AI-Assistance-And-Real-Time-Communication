@@ -21,7 +21,10 @@ if (process.env.NODE_ENV !== 'PRODUCTION') {
 
 //app config
 const app = express();
-const port = process.env.PORT || 4000;
+const port = process.env.PORT ;
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim())
+  : [];
 
 // Stripe webhook must receive raw body (before express.json)
 app.post(
@@ -40,7 +43,7 @@ const server = http.createServer(app);
 // ==================
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:5174","http://localhost:8000"],
+    origin: allowedOrigins,
     credentials: true
   }
 });
@@ -54,7 +57,7 @@ connectCloudinary();
 //middlewares
 app.use(express.json());
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5174","http://localhost:8000"],
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
 }));

@@ -39,7 +39,7 @@ export const checkCancelAccountRestriction = (userData) => {
   const status = userData.accountStatus;
 
   if (status === "restricted" || status === "blocked") {
-    const limit = Number(process.env.CANCEL_APPOINTMENT_LIMIT) || 3;
+    const limit = Number(process.env.CANCEL_APPOINTMENT_LIMIT);
 
     return {
       allowed: false,

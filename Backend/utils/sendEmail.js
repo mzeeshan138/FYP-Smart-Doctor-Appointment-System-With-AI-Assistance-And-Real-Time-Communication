@@ -17,7 +17,7 @@ const getTransporter = () => {
 };
 
 export const sendPasswordResetEmail = async (email, resetLink, expiryMinutes) => {
-  const fromName = process.env.GOOGLE_FROM_NAME || "doctorhub";
+  const fromName = process.env.GOOGLE_FROM_NAME;
   const fromEmail = process.env.GOOGLE_APP_USER;
 
   const transporter = getTransporter();
@@ -41,7 +41,7 @@ export const sendPasswordResetEmail = async (email, resetLink, expiryMinutes) =>
 };
 
 export const sendVerificationEmail = async (email, code) => {
-  const fromName = process.env.GOOGLE_FROM_NAME || "doctorhub";
+  const fromName = process.env.GOOGLE_FROM_NAME;
   const fromEmail = process.env.GOOGLE_APP_USER;
 
   const transporter = getTransporter();

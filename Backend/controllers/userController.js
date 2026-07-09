@@ -69,7 +69,7 @@ const registerUser = async (req, res) => {
 
     await emailVerificationModel.deleteOne({ email: normalizedEmail });
 
-    const token = jwt.sign({ id: user._id }, "awkmadrista");
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
     res.json({ success: true, token, message: "Account created successfully" });
   } catch (error) {
@@ -104,7 +104,7 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (isMatch) {
-      const token = jwt.sign({ id: user._id }, "awkmadrista");
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       return res.json({ success: true, token });
     } else {
       return res.json({ success: false, message: "Invalid credentials" });

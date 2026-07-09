@@ -20,7 +20,7 @@ const authAny = async (req, res, next) => {
 
     if (!req.body) req.body = {};
 
-    const token_decode = jwt.verify(authToken, "awkmadrista");
+    const token_decode = jwt.verify(authToken, process.env.JWT_SECRET);
 
     const user = await userModel
       .findById(token_decode.id)

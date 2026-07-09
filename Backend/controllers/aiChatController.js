@@ -7,7 +7,7 @@ const aiChatHandler = async (req, res) => {
     if (!message) return res.status(400).json({ success: false, message: "Message is required" });
 
     // 🔹 Call FastAPI internally
-    const aiRes = await axios.post("http://127.0.0.1:8000/predict", { text: message });
+    const aiRes = await axios.post(process.env.AI_CHAT_API_URL, { text: message });
     const { detected_symptoms, predicted_disease } = aiRes.data;
 
     // 🔹 Map disease → speciality

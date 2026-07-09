@@ -78,7 +78,7 @@ export const requestPasswordReset = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const frontendUrl = process.env.FRONTEND_URL;
     const resetLink = `${frontendUrl}/reset-password?token=${rawToken}`;
 
     await sendPasswordResetEmail(normalizedEmail, resetLink, expiryMinutes);

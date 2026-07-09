@@ -16,7 +16,7 @@ const getStripe = () => {
 };
 
 const getCurrency = () =>
-  (process.env.STRIPE_CURRENCY || "usd").toLowerCase();
+  process.env.STRIPE_CURRENCY.toLowerCase();
 
 const toStripeAmount = (amount) => Math.round(amount * 100);
 
@@ -35,7 +35,7 @@ const getStripeCharge = (amountInRs) => {
     };
   }
 
-  const rate = Number(process.env.STRIPE_PKR_TO_USD_RATE) || 280;
+  const rate = Number(process.env.STRIPE_PKR_TO_USD_RATE);
   const usdAmount = Math.round((amountInRs / rate) * 100) / 100;
 
   return {
@@ -47,7 +47,7 @@ const getStripeCharge = (amountInRs) => {
 };
 
 const frontendUrl = () =>
-  process.env.FRONTEND_URL || "http://localhost:3000";
+  process.env.FRONTEND_URL;
 
 const waitForCompletedPayment = async (stripeSessionId, maxWaitMs = 15000) => {
   const intervalMs = 300;

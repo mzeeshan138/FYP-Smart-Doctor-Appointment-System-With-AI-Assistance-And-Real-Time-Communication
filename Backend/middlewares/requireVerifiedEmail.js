@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import emailVerificationModel from "../models/emailVerificationModel.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "awkmadrista";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const requireVerifiedEmail = async (req, res, next) => {
   try {

@@ -4,9 +4,11 @@ import userModel from "../models/userModel.js";
 import emailVerificationModel from "../models/emailVerificationModel.js";
 import { sendVerificationEmail } from "../utils/sendEmail.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "awkmadrista";
-const CODE_EXPIRY_MINUTES = 10;
-const VERIFICATION_TOKEN_EXPIRY = "30m";
+const JWT_SECRET = process.env.JWT_SECRET;
+const CODE_EXPIRY_MINUTES = Number(
+  process.env.EMAIL_VERIFICATION_CODE_EXPIRY_MINUTES
+);
+const VERIFICATION_TOKEN_EXPIRY = process.env.EMAIL_VERIFICATION_TOKEN_EXPIRY;
 
 const generateCode = () =>
   String(Math.floor(100000 + Math.random() * 900000));
