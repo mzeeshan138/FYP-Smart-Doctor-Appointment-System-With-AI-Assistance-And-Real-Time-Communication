@@ -15,9 +15,11 @@ const getTransporter = () => {
     port: 587,
     secure: false,
     auth: { user, pass },
-    connectionTimeout: 10000,
-    socketTimeout: 10000,
+    connectionTimeout: 30000,
+    socketTimeout: 30000,
     family: 4,
+    maxConnections: 1,
+    maxMessages: 5,
   });
 };
 
