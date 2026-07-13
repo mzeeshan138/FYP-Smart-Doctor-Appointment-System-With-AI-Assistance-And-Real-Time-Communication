@@ -63,8 +63,9 @@ export default function AIChatWindow({ onClose }) {
     setLoading(true);
 
     try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || window.location.origin;
       const res = await axios.post(
-        "http://localhost:4000/api/ai/chat",
+        `${backendUrl}/api/ai/chat`,
         { message: input }
       );
 

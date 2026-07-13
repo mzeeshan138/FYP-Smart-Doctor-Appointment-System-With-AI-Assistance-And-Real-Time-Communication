@@ -256,7 +256,7 @@ const deleteDoctor = async (doctorId) => {
     }
   };
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = "https://fyp-smart-doctor-appointment-system.onrender.com";
   const value = {
     aToken,
     setAToken,

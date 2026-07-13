@@ -6,7 +6,7 @@ export const AppContext = createContext();
 
 const AppContextProvider = (props) => {
   const currencySymbol = "Rs ";
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = "https://fyp-smart-doctor-appointment-system.onrender.com";
   const [isLoading, setIsLoading] = useState(false);
   const [doctors, setDoctors] = useState([]);
   const [token, setToken] = useState(
