@@ -17,6 +17,7 @@ const getTransporter = () => {
     auth: { user, pass },
     connectionTimeout: 10000,
     socketTimeout: 10000,
+    family: 4,
   });
 };
 
