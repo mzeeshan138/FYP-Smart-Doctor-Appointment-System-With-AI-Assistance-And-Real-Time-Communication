@@ -7,7 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "server": "nodemon server.js",
-    "dev": "SET NODE_ENV=DEVELOPMENT & nodemon server.js"
+    "dev": "cross-env NODE_ENV=DEVELOPMENT nodemon server.js",
+    "build:frontend": "npm run build --prefix ../Frontend",
+    "build:admin": "npm run build --prefix ../Admin",
+    "build:client": "npm run build:frontend && npm run build:admin",
+    "start:prod": "cross-env NODE_ENV=PRODUCTION node server.js"
   },
   "author": "Muhammad Zeeshan",
   "license": "ISC",
@@ -29,5 +33,8 @@
     "socket.io": "^4.8.3",
     "stripe": "^22.2.0",
     "validator": "^13.12.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }

@@ -28,8 +28,8 @@ const Footer = () => {
         <div>
           <p className="text-xl font-medium mb-5">GET IN TOUCH</p>
           <ul className="flex flex-col gap-2 text-gray-600">
-            <li> Tel: (123) 456‑7890 </li>
-            <li>help@doctorhub.com</li>
+            <li> Tel: 923254660138 </li>
+            <li>muhammadzeeshan786138@gmail.com</li>
           </ul>
         </div>
       </div>
@@ -67,7 +67,7 @@ const Footer = () => {
 
         <div className="text-center mt-5">
           <p className="text-gray-700 font-medium">
-            Supervised by Sir Irfan & Sir Zargham Abbas
+            Supervised by Mr. Muhammad Irfan & Mr. Zargham Abbas
           </p>
 
           <p className="text-gray-600 mt-2">

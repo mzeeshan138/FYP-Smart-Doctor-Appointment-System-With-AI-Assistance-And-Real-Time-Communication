@@ -21,7 +21,7 @@ const ChatLayout = ({ currentUser }) => {
   useEffect(() => {
     if (!currentUser?._id) return;
 
-    socket.current = io("http://localhost:4000");
+    socket.current = io(backendUrl || window.location.origin);
 
     socket.current.emit("user_online", currentUser._id);
 

@@ -7,7 +7,7 @@ import DoctorContextProvider from "./context/DontorContext.jsx";
 import AppContextProvider from "./context/AppContext.jsx";
 
 createRoot(document.getElementById("root")).render(
-  <BrowserRouter>
+  <BrowserRouter basename="/admin">
     <AdminContextProvider>
       <DoctorContextProvider>
         <AppContextProvider>

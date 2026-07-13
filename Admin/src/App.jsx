@@ -33,9 +33,16 @@ const App = () => {
   // Fix stale dual-token state from older sessions
   useEffect(() => {
     if (aToken && dToken) {
-      const path = window.location.pathname;
-      const doctorPaths = ["/doctor-dashboard", "/doctor-appointments", "/doctor-profile", "/chat"];
-      if (doctorPaths.some((p) => path.startsWith(p))) {
+      const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const routePath =
+        window.location.pathname.replace(basePath, "") || "/";
+      const doctorPaths = [
+        "/doctor-dashboard",
+        "/doctor-appointments",
+        "/doctor-profile",
+        "/chat",
+      ];
+      if (doctorPaths.some((p) => routePath.startsWith(p))) {
         localStorage.removeItem("aToken");
         setAToken("");
       } else {
