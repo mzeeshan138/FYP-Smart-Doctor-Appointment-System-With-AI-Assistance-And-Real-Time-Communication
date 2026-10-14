@@ -87,8 +87,13 @@ web_modules/
 
 # dotenv environment variable files
 .env
+.env.*
+!.env.example
+Backend/config/config.env
+.env.*
+!.env.example
+Backend/config/config.env
 .env.development.local
-.env.production
 .env.test.local
 .env.production.local
 .env.local
@@ -103,7 +108,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-# dist
+dist
 
 # Gatsby files
 .cache/
@@ -112,7 +117,7 @@ out
 # public
 
 # vuepress build output
-# .vuepress/dist
+.vuepress/dist
 
 # vuepress v2.x temp and cache directory
 .temp
@@ -142,3 +147,7 @@ out
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+.env.*
+!.env.example
+Backend/config/config.env
