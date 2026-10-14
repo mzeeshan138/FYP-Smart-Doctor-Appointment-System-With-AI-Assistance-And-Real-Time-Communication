@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import axios from "axios";
 import DoctorCard from "./DoctorCard";
 import PropTypes from "prop-types";
 import { SYMPTOMS } from "../../constants/constants";
+import { AppContext } from "../../context/AppContext";
 
 export default function AIChatWindow({ onClose }) {
+  const { backendUrl } = useContext(AppContext);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,7 @@ export default function AIChatWindow({ onClose }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:4000/api/ai/chat",
+        `${backendUrl}/api/ai/chat`,
         { message: input }
       );
 
