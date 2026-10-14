@@ -1,37 +1,15 @@
-import dotenv from 'dotenv';
-import express from "express";
-import cors from "cors";
 import http from "http";       
 import { Server } from "socket.io";   
 import connectDB from "./config/mongodb.js";
 import connectCloudinary from "./config/cloudnary.js";
-import adminRouter from "./routes/adminRoute.js";
 // Old AI chat (FastAPI) — uncomment to use sklearn chatbot instead of Gemini
 // import aiChatRouter from "./routes/aiChatRoutes.js";
-import geminiChatRouter from "./routes/geminiChatRoutes.js";
-import doctorRouter from "./routes/doctorRoute.js";
-import userRouter from "./routes/usersRoute.js";
-import chatRouter from "./routes/chatRoutes.js"; 
-import { stripeWebhook } from "./controllers/stripeController.js";
+import app from "./app.js";
 
-//Setting Environment
-if (process.env.NODE_ENV !== 'PRODUCTION') {
-  dotenv.config({ path: 'config/config.env' });
-}
-
-//app config
-const app = express();
 const port = process.env.PORT ;
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim())
   : [];
-
-// Stripe webhook must receive raw body (before express.json)
-app.post(
-  "/api/stripe/webhook",
-  express.raw({ type: "application/json" }),
-  stripeWebhook
-);
 
 // ==================
 // Create HTTP Server
@@ -53,23 +31,6 @@ const io = new Server(server, {
 // ==================
 connectDB();
 connectCloudinary();
-
-//middlewares
-app.use(express.json());
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-}));
-
-//api end points
-app.use("/api/admin", adminRouter);
-app.use("/api/doctor", doctorRouter);
-app.use("/api/user", userRouter);
-// app.use("/api/ai", aiChatRouter); // old FastAPI chatbot
-app.use("/api/gemini-ai", geminiChatRouter);
-app.use("/api/chat", chatRouter); 
-
 
 // ==================
 // Socket Logic
