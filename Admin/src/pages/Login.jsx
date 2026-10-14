@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { AdminContext } from "../context/AdminContext";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { DoctorContext } from "../context/DontorContext";
+import { DoctorContext } from "../context/DoctorContext";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {

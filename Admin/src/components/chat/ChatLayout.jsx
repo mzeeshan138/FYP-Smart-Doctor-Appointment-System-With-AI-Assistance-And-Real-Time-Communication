@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
-import { DoctorContext } from "../../context/DontorContext";
+import { DoctorContext } from "../../context/DoctorContext";
 import SidebarIcons from "./SidebarIcons";
 import ConversationList from "./ConversationList";
 import ChatBox from "./ChatBox";
