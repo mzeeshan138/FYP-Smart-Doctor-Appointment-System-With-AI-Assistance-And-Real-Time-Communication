@@ -151,3 +151,4 @@ dist
 .env.*
 !.env.example
 Backend/config/config.env
+\n# ignore cloudnary config\nBackend/config/cloudnary.js
